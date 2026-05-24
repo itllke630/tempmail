@@ -378,11 +378,6 @@ app.get('/config', (c) => {
   });
 });
 
-// 广告 HTML 接口（前端专用，非敏感）
-api.get('/ad-top', async (c) => {
-  return c.json({ html: c.env.AD_TOP_HTML || '' });
-});
-
 // 站点统计数据接口（公开）
 api.get('/stats', async (c) => {
   const cache = caches.default;
@@ -581,13 +576,25 @@ export default {
     }
 
     // 静态资源请求
-    const response = await env.ASSETS.fetch(request);
+    let response = await env.ASSETS.fetch(request);
 
     // SPA 路由回退：如果静态资源返回 404，则返回 index.html
     // 这样可以支持直接访问 /api-docs 等前端路由
     if (response.status === 404) {
       const indexRequest = new Request(new URL('/', request.url).toString(), request);
-      return env.ASSETS.fetch(indexRequest);
+      response = env.ASSETS.fetch(indexRequest);
+    }
+
+    // 服务端注入广告 HTML 到页面，确保脚本在解析阶段执行
+    const contentType = response.headers.get('Content-Type') || '';
+    if (contentType.includes('text/html') && env.AD_TOP_HTML) {
+      const html = await response.text();
+      const wrapper = `<div style="display:flex;justify-content:center;padding-top:64px;padding-bottom:16px">${env.AD_TOP_HTML}</div>`;
+      const injected = html.replace('<body>', `<body>${wrapper}`);
+      return new Response(injected, {
+        status: response.status,
+        headers: response.headers,
+      });
     }
 
     return response;
