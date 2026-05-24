@@ -8,7 +8,7 @@ interface TeamAuthState {
 }
 
 interface TeamAuthContextValue extends TeamAuthState {
-  login: (password: string) => Promise<void>;
+  login: (password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   error: string | null;
@@ -43,15 +43,14 @@ export function TeamAuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state]);
 
-  const login = useCallback(async (password: string) => {
+  const login = useCallback(async (password: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     try {
       const { teamDomains } = await loginTeam(password);
       if (!teamDomains || teamDomains.length === 0) {
         setError("No team domains configured");
-        setIsLoading(false);
-        return;
+        return false;
       }
       const newState: TeamAuthState = {
         isAuthenticated: true,
@@ -60,8 +59,10 @@ export function TeamAuthProvider({ children }: { children: React.ReactNode }) {
       };
       setState(newState);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+      return true;
     } catch (e: any) {
       setError(e?.message || "Login failed");
+      return false;
     } finally {
       setIsLoading(false);
     }

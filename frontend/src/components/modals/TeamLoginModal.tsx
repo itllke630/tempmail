@@ -6,7 +6,7 @@ import { Lock, X, Loader2 } from "../icons";
 interface TeamLoginModalProps {
   show: boolean;
   onClose: () => void;
-  onLogin: (password: string) => Promise<void>;
+  onLogin: (password: string) => Promise<boolean>;
   isLoggingIn: boolean;
   error: string | null;
 }
@@ -18,8 +18,9 @@ export function TeamLoginModal({ show, onClose, onLogin, isLoggingIn, error }: T
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) return;
-    await onLogin(password.trim());
+    const ok = await onLogin(password.trim());
     setPassword("");
+    if (ok) onClose();
   };
 
   const handleClose = () => {
