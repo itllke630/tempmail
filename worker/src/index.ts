@@ -359,7 +359,7 @@ app.get('/config', (c) => {
   const turnstileEnabled = isTurnstileEnabled(c.env);
   const openApiEnabled = isOpenApiEnabled(c.env);
 
-  return c.json({
+  const responseData: Record<string, unknown> = {
     emailDomain: publicDomains,
     domainTtlConfig: Object.fromEntries(parseDomainTtlConfig(c.env)),
     teamDomains,
@@ -372,6 +372,12 @@ app.get('/config', (c) => {
     showAff: c.env.SHOW_AFF === 'true',
     adTopHtml: c.env.AD_TOP_HTML || '',
     deployVersion: '2',
+  };
+  return new Response(JSON.stringify(responseData), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+    },
   });
 });
 

@@ -34,10 +34,6 @@ AD_TOP_HTML = "${AD_TOP_HTML}"
 [triggers]
 crons = ["0 * * * *"] # 每小时运行一次清理任务
 
-# 构建配置
-[build]
-command = "pnpm run build"
-
 # 静态资源配置
 [assets]
 binding = "ASSETS"
