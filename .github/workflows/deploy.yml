@@ -84,6 +84,11 @@ jobs:
           else
             sed -i '/^SHOW_AFF = /d' wrangler.toml
           fi
+          if [ -n "${DOMAIN_TTL_CONFIG}" ]; then
+            sed -i "s#\${DOMAIN_TTL_CONFIG}#${DOMAIN_TTL_CONFIG}#g" wrangler.toml
+          else
+            sed -i '/^DOMAIN_TTL_CONFIG = /d' wrangler.toml
+          fi
         env:
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
           D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
@@ -94,6 +99,7 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
           API_RATE_LIMIT_PER_MINUTE: ${{ secrets.API_RATE_LIMIT_PER_MINUTE }}
           SHOW_AFF: ${{ secrets.SHOW_AFF }}
+          DOMAIN_TTL_CONFIG: ${{ secrets.DOMAIN_TTL_CONFIG }}
       
       # 新增：在部署前应用 D1 数据库迁移
       # 这一步会明确地告诉 Wrangler 远程执行 D1 数据库的迁移脚本。

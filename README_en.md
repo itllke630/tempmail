@@ -135,14 +135,6 @@ When deploying to Cloudflare Pages, you need to configure the following environm
 -   `SHOW_AFF`: Show promotional popup and link (optional, `true` to enable, hidden by default).
 -   `ENABLE_OPENAPI`: Whether to enable OpenAPI access (optional, enabled by default; set to `false` to disable API key creation and `/api/v1/*` access).
 
-## Community Group
-
-- Discord: https://discord.gg/d68kWCBDEs
-
 ## License
 
 GNU General Public License v3.0
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=oiov/vmail&type=Date)](https://star-history.com/#oiov/vmail&Date)

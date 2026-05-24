@@ -6,8 +6,6 @@
   <p>使用 Cloudflare Email Worker 实现的临时电子邮件服务</p>
 </div>
 
-> 🌟 推荐 **Claude Code** 稳定 API 渠道：[nbility.dev](https://nbility.dev/register?aff=Dptp) ，支持 claude-opus-4-6 等主流 AI Coding 大模型🥳
-
 ## 🌈 特点
 
 - 🎯 隐私友好，无需注册，开箱即用
@@ -141,7 +139,3 @@ curl https://vmail.dev/api/v1/mailboxes/abc123/messages/msg_001 \
 ## 📝 License
 
 GNU General Public License v3.0
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=oiov/vmail&type=Date)](https://star-history.com/#oiov/vmail&Date)

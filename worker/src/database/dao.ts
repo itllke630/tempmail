@@ -120,23 +120,72 @@ export async function deleteEmails(db: DrizzleD1Database, ids: string[]) {
 }
 
 /**
- * 新增函数：根据提供的过期时间删除此时间之前的所有邮件。
- * @param db Drizzle 数据库实例。
- * @param expirationTime 一个 Date 对象，表示过期时间点。
- * @returns 返回一个包含已删除邮件数量的对象，或在出错时返回 { count: 0 }。
+ * 根据提供的过期时间删除此时间之前的所有邮件。
  */
 export async function deleteExpiredEmails(db: DrizzleD1Database, expirationTime: Date) {
     try {
-        // 使用Drizzle的lt（小于）操作符来比较createdAt字段和expirationTime
         const result = await db.delete(emails).where(lt(emails.createdAt, expirationTime)).execute();
-        // 返回受影响的行数，即已删除的邮件数量
         return { count: result.rowsAffected };
     } catch (e) {
-        // 如果在删除过程中发生错误，则在控制台打印错误信息
         console.error('清理过期邮件失败:', e);
-        // 并返回一个表示删除数量为0的对象
         return { count: 0 };
     }
+}
+
+/**
+ * 按域名分别配置不同的保留时间，删除过期邮件。
+ * @param domainTtlConfig Map<domain, ttlHours>，如 {"team.com": 720, "public.com": 24}
+ * @param defaultTtlHours 未配置域名的默认保留时间（小时）
+ */
+export async function deleteExpiredEmailsByDomain(
+    db: DrizzleD1Database,
+    domainTtlConfig: Map<string, number>,
+    defaultTtlHours: number = 24,
+) {
+    const now = Date.now();
+    let totalDeleted = 0;
+
+    // 1. 按每个已配置的域名分别清理
+    for (const [domain, ttlHours] of domainTtlConfig) {
+        const expirationTime = new Date(now - ttlHours * 60 * 60 * 1000);
+        try {
+            const result = await db
+                .delete(emails)
+                .where(and(
+                    lt(emails.createdAt, expirationTime),
+                    sql`SUBSTR(${emails.messageTo}, INSTR(${emails.messageTo}, '@') + 1) = ${domain}`,
+                ))
+                .execute();
+            totalDeleted += result.rowsAffected ?? 0;
+        } catch (e) {
+            console.error(`清理域名 ${domain} 的过期邮件失败:`, e);
+        }
+    }
+
+    // 2. 清理未配置域名（使用默认 TTL）的过期邮件
+    const defaultExpiration = new Date(now - defaultTtlHours * 60 * 60 * 1000);
+    try {
+        if (domainTtlConfig.size > 0) {
+            const excludeConditions = Array.from(domainTtlConfig.keys()).map(domain =>
+                sql`SUBSTR(${emails.messageTo}, INSTR(${emails.messageTo}, '@') + 1) != ${domain}`,
+            );
+            const result = await db
+                .delete(emails)
+                .where(and(lt(emails.createdAt, defaultExpiration), ...excludeConditions))
+                .execute();
+            totalDeleted += result.rowsAffected ?? 0;
+        } else {
+            const result = await db
+                .delete(emails)
+                .where(lt(emails.createdAt, defaultExpiration))
+                .execute();
+            totalDeleted += result.rowsAffected ?? 0;
+        }
+    } catch (e) {
+        console.error('清理未配置域名的过期邮件失败:', e);
+    }
+
+    return { count: totalDeleted };
 }
 
 // ==================== API Key 相关函数 ====================

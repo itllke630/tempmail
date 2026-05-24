@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-workers';
 import { cors } from 'hono/cors';
 // 导入数据库相关的模块
-import { deleteEmails, findEmailById, getEmailsByMessageTo, insertEmail, deleteExpiredEmails, insertApiKey, getSiteStats, incrementEmailsReceived, incrementApiKeysCreated, incrementAddressesCreated, incrementDailyAddressesCreated, incrementDailyEmailsReceived, incrementDailyApiKeysCreated, getMailboxMetaByAddress } from './database/dao';
+import { deleteEmails, findEmailById, getEmailsByMessageTo, insertEmail, deleteExpiredEmailsByDomain, insertApiKey, getSiteStats, incrementEmailsReceived, incrementApiKeysCreated, incrementAddressesCreated, incrementDailyAddressesCreated, incrementDailyEmailsReceived, incrementDailyApiKeysCreated, getMailboxMetaByAddress } from './database/dao';
 import { getD1DB } from './database/db';
 import { InsertEmail, insertEmailSchema } from './database/schema';
 import { nanoid } from 'nanoid/non-secure';
@@ -21,6 +21,7 @@ export interface Env {
 
   // 从 wrangler.toml 中传入的环境变量
   EMAIL_DOMAIN: string;
+  DOMAIN_TTL_CONFIG?: string;
   COOKIES_SECRET: string;
   TURNSTILE_KEY: string;
   TURNSTILE_SECRET: string;
@@ -48,6 +49,21 @@ function parseRateLimitPerMinute(env: Env): number {
     return 100;
   }
   return parsed;
+}
+
+function parseDomainTtlConfig(env: Env): Map<string, number> {
+  const map = new Map<string, number>();
+  if (!env.DOMAIN_TTL_CONFIG) return map;
+  for (const pair of env.DOMAIN_TTL_CONFIG.split(',')) {
+    const [domain, hours] = pair.split('=').map(s => s.trim());
+    if (domain && hours) {
+      const n = Number.parseInt(hours, 10);
+      if (Number.isFinite(n) && n > 0) {
+        map.set(domain, n);
+      }
+    }
+  }
+  return map;
 }
 
 function isSiteUnlocked(request: Request, env: Env): boolean {
@@ -331,7 +347,8 @@ app.get('/config', (c) => {
   const openApiEnabled = isOpenApiEnabled(c.env);
 
   return c.json({
-    emailDomain: emailDomain, // 返回域名数组
+    emailDomain: emailDomain,
+    domainTtlConfig: Object.fromEntries(parseDomainTtlConfig(c.env)),
     turnstileKey: c.env.TURNSTILE_KEY,
     turnstileEnabled,
     cookiesSecret: c.env.COOKIES_SECRET,
@@ -504,12 +521,11 @@ export default {
     return response;
   },
 
-  // 定时任务 (清理过期邮件)
+  // 定时任务 (清理过期邮件，按域名分别配置保留时间)
   async scheduled(event, env, ctx) {
       const db = getD1DB(env.DB);
-      // 修复：将清理时间从1小时修改为24小时（1天）
-      const oneDayAgo = new Date(Date.now() - 1000 * 60 * 60 * 24);
-      await deleteExpiredEmails(db, oneDayAgo);
-      console.log(`已清理 ${oneDayAgo.toISOString()} 之前的过期邮件`); // 添加日志
+      const domainTtlConfig = parseDomainTtlConfig(env);
+      const result = await deleteExpiredEmailsByDomain(db, domainTtlConfig, 24);
+      console.log(`已清理 ${result.count} 封过期邮件`);
   },
 };
