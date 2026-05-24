@@ -11,15 +11,17 @@ function AdTop({ html }: { html: string }) {
 
   useEffect(() => {
     if (!ref.current || !html) return;
-    const el = ref.current;
-    el.innerHTML = "";
+    const container = ref.current;
+    container.innerHTML = "";
 
+    // 解析广告 HTML，按顺序重建脚本并插入到容器内部
     const temp = document.createElement("div");
     temp.innerHTML = html;
 
+    // 拦截 document.write，将输出捕获到容器内（防御性处理）
     const originalWrite = document.write.bind(document);
     document.write = function (markup: string) {
-      el.innerHTML += markup;
+      container.innerHTML += markup;
     } as typeof document.write;
 
     while (temp.firstChild) {
@@ -29,17 +31,14 @@ function AdTop({ html }: { html: string }) {
         Array.from(node.attributes).forEach((a) => script.setAttribute(a.name, a.value));
         if (node.src) {
           script.src = node.src;
-          document.body.appendChild(script);
-          script.addEventListener("load", () => script.remove());
-          script.addEventListener("error", () => script.remove());
         } else {
           script.textContent = node.textContent;
-          document.body.appendChild(script);
-          script.remove();
         }
+        // 关键：脚本插入到容器内部，invoke.js 通过 document.currentScript 定位
+        container.appendChild(script);
         node.remove();
       } else {
-        el.appendChild(node);
+        container.appendChild(node);
       }
     }
 
@@ -48,7 +47,7 @@ function AdTop({ html }: { html: string }) {
     };
   }, [html]);
 
-  return <div ref={ref} className="w-full flex justify-center pb-4" />;
+  return <div id="ad-slot-top" ref={ref} className="w-full flex justify-center pb-4" />;
 }
 
 export function Layout() {
