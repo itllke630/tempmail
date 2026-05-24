@@ -12,9 +12,23 @@ function AdTop({ html }: { html: string }) {
 
   useEffect(() => {
     if (!ref.current || !html) return;
+    const container = document.createElement("div");
+    container.innerHTML = html;
     ref.current.innerHTML = "";
-    const fragment = document.createRange().createContextualFragment(html);
-    ref.current.appendChild(fragment);
+    while (container.firstChild) {
+      const node = container.firstChild;
+      if (node instanceof HTMLScriptElement) {
+        const script = document.createElement("script");
+        Array.from(node.attributes).forEach((attr) => {
+          script.setAttribute(attr.name, attr.value);
+        });
+        script.textContent = node.textContent;
+        ref.current.appendChild(script);
+        node.remove();
+      } else {
+        ref.current.appendChild(node);
+      }
+    }
   }, [html]);
 
   return <div ref={ref} className="w-full flex justify-center pb-4" />;

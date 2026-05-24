@@ -10,7 +10,6 @@ export interface AppConfig {
   sitePasswordEnabled: boolean;
   apiRateLimitPerMinute: number;
   openApiEnabled: boolean;
-  cookiesSecret: string;
   showAff: boolean;
   adTopHtml: string;
 }

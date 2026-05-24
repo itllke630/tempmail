@@ -365,13 +365,11 @@ app.get('/config', (c) => {
     teamDomains,
     turnstileKey: c.env.TURNSTILE_KEY,
     turnstileEnabled,
-    cookiesSecret: c.env.COOKIES_SECRET,
     sitePasswordEnabled: Boolean(c.env.PASSWORD),
     apiRateLimitPerMinute: parseRateLimitPerMinute(c.env),
     openApiEnabled,
     showAff: c.env.SHOW_AFF === 'true',
     adTopHtml: c.env.AD_TOP_HTML || '',
-    deployVersion: '2',
   };
   return new Response(JSON.stringify(responseData), {
     headers: {
