@@ -12,11 +12,11 @@ export function Layout() {
 
   return (
     <div className="mx-auto min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 transition-colors">
-      {config.adTopHtml ? (
-        <div className="w-full flex justify-center" dangerouslySetInnerHTML={{ __html: config.adTopHtml }} />
-      ) : null}
       <Header />
       <div className="pt-16">
+        {config.adTopHtml ? (
+          <div className="w-full flex justify-center pb-4" dangerouslySetInnerHTML={{ __html: config.adTopHtml }} />
+        ) : null}
         <AdSlot variant="leaderboard" className="py-4 px-4" />
         <Outlet />
       </div>
