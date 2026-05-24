@@ -1,17 +1,48 @@
 import { Outlet } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { AdSlot } from "./components/ads/AdSlot";
 import { Toaster } from "react-hot-toast";
 import { useTheme } from "./hooks/useTheme";
 
+function AdTop({ html }: { html: string }) {
+  const ref = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (!ref.current || !html) return;
+    const doc = ref.current.contentDocument;
+    if (!doc) return;
+    doc.open();
+    doc.write(html);
+    doc.close();
+  }, [html]);
+
+  return (
+    <div className="w-full flex justify-center pb-4">
+      <iframe
+        ref={ref}
+        title="ad"
+        style={{ width: "728px", height: "90px", border: "none", overflow: "hidden" }}
+        sandbox="allow-scripts allow-popups allow-same-origin"
+      />
+    </div>
+  );
+}
+
 export function Layout() {
   const { theme } = useTheme();
+  const [adTopHtml, setAdTopHtml] = useState("");
+
+  useEffect(() => {
+    fetch("/api/ad-top").then(r => r.json()).then(d => setAdTopHtml(d.html || "")).catch(() => {});
+  }, []);
 
   return (
     <div className="mx-auto min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 transition-colors">
       <Header />
       <div className="pt-16">
+        {adTopHtml ? <AdTop html={adTopHtml} /> : null}
         <AdSlot variant="leaderboard" className="py-4 px-4" />
         <Outlet />
       </div>

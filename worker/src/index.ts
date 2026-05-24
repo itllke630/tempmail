@@ -378,6 +378,11 @@ app.get('/config', (c) => {
   });
 });
 
+// 广告 HTML 接口
+api.get('/ad-top', async (c) => {
+  return c.json({ html: c.env.AD_TOP_HTML || '' });
+});
+
 // 站点统计数据接口（公开）
 api.get('/stats', async (c) => {
   const cache = caches.default;
@@ -576,28 +581,12 @@ export default {
     }
 
     // 静态资源请求
-    let response = await env.ASSETS.fetch(request);
+    const response = await env.ASSETS.fetch(request);
 
     // SPA 路由回退：如果静态资源返回 404，则返回 index.html
-    const isSpaFallback = response.status === 404;
-    if (isSpaFallback) {
+    if (response.status === 404) {
       const indexRequest = new Request(new URL('/', request.url).toString(), request);
-      response = env.ASSETS.fetch(indexRequest);
-    }
-
-    // 对 HTML 响应注入广告代码（服务端注入确保脚本在解析阶段执行）
-    const path = url.pathname;
-    const isHtmlRequest = path === '/' || path.endsWith('.html') || isSpaFallback;
-    if (isHtmlRequest && env.AD_TOP_HTML) {
-      const html = await response.text();
-      const wrapper = `<div style="display:flex;justify-content:center;padding-top:64px;padding-bottom:16px">${env.AD_TOP_HTML}</div>`;
-      const injected = html.replace('<body>', `<body>${wrapper}`);
-      const headers = new Headers(response.headers);
-      headers.set('X-Ad-Injected', 'true');
-      return new Response(injected, {
-        status: response.status,
-        headers,
-      });
+      return env.ASSETS.fetch(indexRequest);
     }
 
     return response;
