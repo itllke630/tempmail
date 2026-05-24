@@ -23,7 +23,7 @@ export function AdFrame({
     iframe.style.cssText = `width:${width}px;height:${height}px;border:none;display:block`;
     iframe.scrolling = "no";
     iframe.title = "ad";
-    iframe.setAttribute("sandbox", "allow-scripts allow-popups");
+    iframe.setAttribute("sandbox", "allow-scripts allow-popups allow-same-origin");
     iframe.src = url;
 
     ref.current.innerHTML = "";
