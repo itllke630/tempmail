@@ -1,3 +1,4 @@
+import { useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns/format";
 import { ArrowUturnLeft, Maximize2, Trash2, UserCircleIcon } from "../icons";
@@ -18,6 +19,18 @@ export function EmailDetailView({ email, otpCodes, onClose, onExpand, onDelete }
   const bestOtp = otpCodes.length > 0 ? otpCodes[0] : null;
   const senderName = email.from?.name || email.from?.address || email.messageFrom;
   const subject = email.subject || "(no subject)";
+
+  const htmlBlobUrl = useMemo(() => {
+    if (!email.html) return undefined;
+    const blob = new Blob([email.html], { type: "text/html" });
+    return URL.createObjectURL(blob);
+  }, [email.html]);
+
+  useEffect(() => {
+    return () => {
+      if (htmlBlobUrl) URL.revokeObjectURL(htmlBlobUrl);
+    };
+  }, [htmlBlobUrl]);
 
   const formatDate = (d: string | Date | null) => {
     if (!d) return "";
@@ -67,11 +80,11 @@ export function EmailDetailView({ email, otpCodes, onClose, onExpand, onDelete }
         </div>
 
         <div className="border-t border-gray-100 dark:border-zinc-800 pt-4">
-          {email.html ? (
+          {htmlBlobUrl ? (
             <iframe
-              srcDoc={email.html}
+              src={htmlBlobUrl}
               className="w-full min-h-[400px] border-0 rounded-xl bg-white dark:bg-zinc-950"
-              sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+              sandbox="allow-same-origin allow-popups"
               title="Email content"
             />
           ) : (
