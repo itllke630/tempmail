@@ -71,7 +71,7 @@ export function EmailDetailView({ email, otpCodes, onClose, onExpand, onDelete }
             <iframe
               srcDoc={email.html}
               className="w-full min-h-[400px] border-0 rounded-xl bg-white dark:bg-zinc-950"
-              sandbox="allow-popups allow-popups-to-escape-sandbox"
+              sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
               title="Email content"
             />
           ) : (
