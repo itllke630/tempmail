@@ -204,8 +204,8 @@ export function Home() {
 
   return (
     <>
-      {/* Email controls: full-width single row */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-4">
+      {/* Email controls: constrained width, centered */}
+      <div className="max-w-2xl mx-auto px-4 md:px-6 pt-5">
         <EmailControls
           localPart={localPart}
           domain={selectedDomain}
@@ -223,17 +223,19 @@ export function Home() {
         />
       </div>
 
-      {/* Main grid: 5-col sidebar + 7-col inbox */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-8">
-        <div className="md:grid md:grid-cols-12 md:gap-6">
+      {/* Three-column layout: left ad | center inbox | right ad */}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-5 pb-8">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-5">
 
-          {/* Left: Sidebar (5 cols) */}
-          <aside className="md:col-span-5 lg:col-span-4 space-y-5 mt-5">
-            <AdSlot variant="sidebar" />
+          {/* Left skyscraper ad */}
+          <aside className="hidden lg:block lg:col-span-2">
+            <div className="sticky top-20">
+              <AdSlot variant="skyscraper" />
+            </div>
           </aside>
 
-          {/* Right: Inbox (7 cols) */}
-          <main className="md:col-span-7 lg:col-span-8 mt-5">
+          {/* Center: Inbox */}
+          <main className="lg:col-span-8">
             <EmailListPanel
               emails={emails}
               isLoading={isLoading}
@@ -251,6 +253,13 @@ export function Home() {
               lastViewedAt={null}
             />
           </main>
+
+          {/* Right skyscraper ad */}
+          <aside className="hidden lg:block lg:col-span-2">
+            <div className="sticky top-20">
+              <AdSlot variant="skyscraper" />
+            </div>
+          </aside>
 
         </div>
       </div>

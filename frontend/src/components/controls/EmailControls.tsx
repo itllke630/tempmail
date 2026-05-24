@@ -50,26 +50,26 @@ export function EmailControls({
   }, [fullAddress]);
 
   return (
-    <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-700/50 shadow-sm transition-colors">
+    <div className="flex items-center gap-1 p-1 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-700/50 shadow-sm transition-colors">
       {/* Email name input */}
       <input
         ref={inputRef}
         type="text"
         value={localPart}
         onChange={(e) => onLocalPartChange(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
-        className="flex-1 min-w-0 bg-transparent px-2.5 py-2 text-sm font-mono text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+        className="flex-1 min-w-0 bg-transparent px-2 py-1.5 text-sm font-mono text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
         placeholder={t("email name")}
       />
 
       {/* @ separator */}
-      <span className="text-sm text-zinc-400 dark:text-zinc-500 shrink-0 select-none">@</span>
+      <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0 select-none">@</span>
 
       {/* Domain select */}
       <div className="relative shrink-0">
         <select
           value={domain}
           onChange={(e) => onDomainChange(e.target.value)}
-          className="appearance-none bg-zinc-50 dark:bg-white/5 border border-zinc-200/60 dark:border-zinc-700/50 rounded-lg pl-2.5 pr-7 py-2 text-xs text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-cyan-500/40 cursor-pointer transition-all"
+          className="appearance-none bg-zinc-50 dark:bg-white/5 border border-zinc-200/60 dark:border-zinc-700/50 rounded-lg pl-2 pr-6 py-1.5 text-xs text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-cyan-500/40 cursor-pointer transition-all"
         >
           {publicDomains.map((d) => (
             <option key={d} value={d}>{d}</option>
@@ -89,27 +89,27 @@ export function EmailControls({
       <button
         onClick={onRandom}
         title={t("Random")}
-        className="shrink-0 p-2 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-all"
+        className="shrink-0 p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-all"
       >
-        <Shuffle className="w-4 h-4" />
+        <Shuffle className="w-3.5 h-3.5" />
       </button>
 
       {/* Copy button */}
       <button
         onClick={handleCopy}
         title={t("Copy address")}
-        className="shrink-0 p-2 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-all"
+        className="shrink-0 p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-all"
       >
-        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+        {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
       </button>
 
       {/* Refresh button */}
       <button
         onClick={onRefresh}
         title={t("Refresh")}
-        className="shrink-0 p-2 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-all"
+        className="shrink-0 p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-all"
       >
-        <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+        <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
       </button>
 
       {/* Telegram toggle with tooltip */}
