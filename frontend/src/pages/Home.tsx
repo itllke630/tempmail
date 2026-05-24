@@ -10,7 +10,6 @@ import { useTeamAuth } from "../hooks/useTeamAuth";
 import { extractOtpsFromEmail } from "../lib/otp";
 import { EmailControls, generateRandomLocalPart } from "../components/controls/EmailControls";
 import { EmailListPanel } from "../components/email/EmailListPanel";
-import { TeamLoginModal } from "../components/modals/TeamLoginModal";
 import { AdSlot } from "../components/ads/AdSlot";
 import { SeoMarketing } from "../components/SeoMarketing";
 import type { Email } from "../database_types";
@@ -47,7 +46,6 @@ export function Home() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [hasReceivedEmail, setHasReceivedEmail] = useState(false);
-  const [showTeamModal, setShowTeamModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [telegramEnabled, setTelegramEnabled] = useState(() => {
     try { return localStorage.getItem(TG_KEY) === "true"; } catch { return false; }
@@ -206,38 +204,36 @@ export function Home() {
 
   return (
     <>
+      {/* Email controls: full-width single row */}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-4">
+        <EmailControls
+          localPart={localPart}
+          domain={selectedDomain}
+          config={config}
+          teamDomains={teamAuth.teamDomains}
+          isTeamMode={teamAuth.isAuthenticated}
+          fullAddress={fullAddress}
+          isFetching={isFetching}
+          telegramEnabled={telegramEnabled}
+          onLocalPartChange={handleLocalPartChange}
+          onDomainChange={handleDomainChange}
+          onRandom={handleRandom}
+          onRefresh={handleRefresh}
+          onToggleTelegram={handleToggleTelegram}
+        />
+      </div>
+
       {/* Main grid: 5-col sidebar + 7-col inbox */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 pb-8">
         <div className="md:grid md:grid-cols-12 md:gap-6">
 
-          {/* Left: Control Center (5 cols) */}
-          <aside className="md:col-span-5 lg:col-span-4 space-y-5">
-            <div className="rounded-2xl border border-zinc-200/60 dark:border-zinc-700/40 bg-white dark:bg-zinc-900 p-5 shadow-sm">
-              <EmailControls
-                localPart={localPart}
-                domain={selectedDomain}
-                config={config}
-                teamDomains={teamAuth.teamDomains}
-                isTeamMode={teamAuth.isAuthenticated}
-                fullAddress={fullAddress}
-                isFetching={isFetching}
-                telegramEnabled={telegramEnabled}
-                onLocalPartChange={handleLocalPartChange}
-                onDomainChange={handleDomainChange}
-                onRandom={handleRandom}
-                onRefresh={handleRefresh}
-                onToggleTelegram={handleToggleTelegram}
-                onTeamLoginClick={() => setShowTeamModal(true)}
-                onTeamLogout={teamAuth.logout}
-              />
-            </div>
-
-            {/* AdSlot B: Sidebar square */}
+          {/* Left: Sidebar (5 cols) */}
+          <aside className="md:col-span-5 lg:col-span-4 space-y-5 mt-5">
             <AdSlot variant="sidebar" />
           </aside>
 
           {/* Right: Inbox (7 cols) */}
-          <main className="md:col-span-7 lg:col-span-8 mt-5 md:mt-0">
+          <main className="md:col-span-7 lg:col-span-8 mt-5">
             <EmailListPanel
               emails={emails}
               isLoading={isLoading}
@@ -261,14 +257,6 @@ export function Home() {
 
       {/* SEO Marketing Section */}
       <SeoMarketing />
-
-      <TeamLoginModal
-        show={showTeamModal}
-        onClose={() => setShowTeamModal(false)}
-        onLogin={teamAuth.login}
-        isLoggingIn={teamAuth.isLoading}
-        error={teamAuth.error}
-      />
     </>
   );
 }

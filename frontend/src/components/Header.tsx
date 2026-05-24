@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { VmailLogo, ChevronDown, Sun, Moon } from "./icons";
+import { VmailLogo, ChevronDown, Sun, Moon, LogOut } from "./icons";
 import { useTranslation } from "react-i18next";
 import { useState, useRef, useEffect } from "react";
 import { InfoModal } from "./InfoModal";
@@ -7,6 +7,8 @@ import { About } from "../pages/About";
 import { Privacy } from "../pages/Privacy";
 import { Terms } from "../pages/Terms";
 import { useTheme } from "../hooks/useTheme";
+import { useTeamAuth } from "../hooks/useTeamAuth";
+import { TeamLoginModal } from "./modals/TeamLoginModal";
 
 const languages = [
   { code: "zh", name: "简体中文", flag: "🇨🇳" },
@@ -25,10 +27,12 @@ const languages = [
 export function Header() {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
+  const teamAuth = useTeamAuth();
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
 
   const currentLang = languages.find((l) => {
@@ -111,6 +115,25 @@ export function Header() {
             )}
           </div>
 
+          {/* Team Login/Logout */}
+          {teamAuth.isAuthenticated ? (
+            <button
+              onClick={teamAuth.logout}
+              className="ml-3 md:ml-6 flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+              title={t("Team Logout")}
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">{t("Team Logout")}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowTeamModal(true)}
+              className="ml-3 md:ml-6 text-xs font-medium text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            >
+              {t("Team Login")}
+            </button>
+          )}
+
           <button
             onClick={toggleTheme}
             className="ml-3 md:ml-6 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -130,6 +153,13 @@ export function Header() {
       <InfoModal showModal={showTermsModal} setShowModal={setShowTermsModal} title={t("Terms")}>
         <Terms />
       </InfoModal>
+      <TeamLoginModal
+        show={showTeamModal}
+        onClose={() => setShowTeamModal(false)}
+        onLogin={teamAuth.login}
+        isLoggingIn={teamAuth.isLoading}
+        error={teamAuth.error}
+      />
     </>
   );
 }
