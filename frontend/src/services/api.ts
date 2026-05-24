@@ -75,6 +75,20 @@ export async function deleteEmails(ids: string[]): Promise<{ count: number }> {
     return response.json();
 }
 
+// 团队登录：验证密码是否匹配 PASSWORD 环境变量
+export async function loginTeam(password: string): Promise<{ success: boolean; teamDomains: string[] }> {
+  const response = await fetch(`${API_BASE_URL}/team/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Login failed');
+  }
+  return response.json();
+}
+
 // feat: 添加密码登录函数
 // fix: 移除 token 参数，因为登录流程不再需要人机验证
 export async function loginByPassword(password: string): Promise<{ address: string }> {

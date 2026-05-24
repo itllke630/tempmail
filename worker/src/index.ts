@@ -284,6 +284,31 @@ api.post('/delete-emails', async (c) => {
     return c.json(result);
 });
 
+// 团队登录：验证密码是否匹配 PASSWORD 环境变量
+api.post('/team/login', async (c) => {
+  if (!c.env.PASSWORD) {
+    return c.json({ message: 'Team login is not enabled' }, 403);
+  }
+
+  let body: { password?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ message: 'Invalid request body' }, 400);
+  }
+
+  if (!body.password || body.password !== c.env.PASSWORD) {
+    return c.json({ message: 'Invalid password' }, 401);
+  }
+
+  const teamDomains = c.env.TEAM_DOMAINS ? c.env.TEAM_DOMAINS.split(',').map(d => d.trim()) : [];
+
+  return c.json({
+    success: true,
+    teamDomains,
+  });
+});
+
 // 修复：移除登录接口的 turnstile 中间件，使其不再需要人机验证。
 api.post('/login', async (c) => {
   // const db = getD1DB(c.env.DB); // 数据库连接不再需要用于验证

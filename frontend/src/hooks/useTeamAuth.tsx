@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { loginByPassword } from "../services/api";
-import { useConfig } from "./useConfig";
+import { loginTeam } from "../services/api";
 
 interface TeamAuthState {
   isAuthenticated: boolean;
@@ -19,13 +18,7 @@ const STORAGE_KEY = "vmail_team_auth";
 
 const TeamAuthContext = createContext<TeamAuthContextValue | null>(null);
 
-function isTeamDomain(domain: string, domainTtlConfig: Record<string, number>): boolean {
-  const ttl = domainTtlConfig[domain];
-  return ttl !== undefined && ttl >= 720;
-}
-
 export function TeamAuthProvider({ children }: { children: React.ReactNode }) {
-  const config = useConfig();
   const [state, setState] = useState<TeamAuthState>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -54,20 +47,16 @@ export function TeamAuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const { address } = await loginByPassword(password);
-      const domain = address.split("@")[1];
-      if (!domain || !isTeamDomain(domain, config.domainTtlConfig)) {
-        setError("Invalid team credentials");
+      const { teamDomains } = await loginTeam(password);
+      if (!teamDomains || teamDomains.length === 0) {
+        setError("No team domains configured");
         setIsLoading(false);
         return;
       }
-      const teamDomains = Object.keys(config.domainTtlConfig).filter(
-        (d) => isTeamDomain(d, config.domainTtlConfig)
-      );
       const newState: TeamAuthState = {
         isAuthenticated: true,
         teamDomains,
-        teamName: domain,
+        teamName: teamDomains[0],
       };
       setState(newState);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
@@ -76,7 +65,7 @@ export function TeamAuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [config.domainTtlConfig]);
+  }, []);
 
   const logout = useCallback(() => {
     setState({ isAuthenticated: false, teamDomains: [], teamName: null });
