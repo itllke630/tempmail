@@ -56,9 +56,13 @@ jobs:
         # 这样就解决了在部署环境中因锁文件不同步导致的安装失败问题。
         run: pnpm install --no-frozen-lockfile
 
-      # 运行构建
+      # 运行构建（写 .env 确保 Vite 读取到 GA ID）
       - name: Build
-        run: pnpm run build
+        run: |
+          if [ -n "${VITE_GA_MEASUREMENT_ID}" ]; then
+            echo "VITE_GA_MEASUREMENT_ID=${VITE_GA_MEASUREMENT_ID}" > frontend/.env
+          fi
+          pnpm run build
         env:
           VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
 
