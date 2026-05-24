@@ -23,8 +23,8 @@ function AdTop({ html }: { html: string }) {
       <iframe
         ref={ref}
         title="ad"
-        style={{ width: "728px", height: "90px", border: "none", overflow: "hidden" }}
-        sandbox="allow-scripts allow-popups allow-same-origin"
+        style={{ width: "728px", height: "90px", border: "none" }}
+        scrolling="no"
       />
     </div>
   );
