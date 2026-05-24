@@ -2,15 +2,14 @@ import { createContext, useContext } from 'react';
 
 // 定义配置的类型
 export interface AppConfig {
-  emailDomain: string[]; // 修改为字符串数组
+  emailDomain: string[];
+  domainTtlConfig: Record<string, number>;
   turnstileKey: string;
   turnstileEnabled: boolean;
   sitePasswordEnabled: boolean;
   apiRateLimitPerMinute: number;
   openApiEnabled: boolean;
-  // feat: 添加 cookiesSecret 到配置中，以便前端加密时使用
   cookiesSecret: string;
-  // feat: 控制是否展示推广弹框和常驻链接
   showAff: boolean;
 }
 

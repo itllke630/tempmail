@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { toast } from "react-hot-toast";
+import { useTheme } from "../hooks/useTheme";
 import { useConfig } from "../hooks/useConfig";
 import { CopyButton } from "../components/CopyButton";
 import { InfoModal } from "../components/InfoModal";
@@ -20,9 +21,9 @@ interface ApiKeyResponse {
 export function ApiDocs() {
   const { t } = useTranslation();
   const config = useConfig();
+  const { theme, resolvedTheme } = useTheme();
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // API Key 创建相关状态
   const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [isCreating, setIsCreating] = useState(false);
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
@@ -33,17 +34,18 @@ export function ApiDocs() {
     return !hasShown;
   });
 
-  // 当弹框关闭时，记录到 localStorage
   useEffect(() => {
     if (!showPromoModal) {
       localStorage.setItem("nbility_promo_shown", "true");
     }
   }, [showPromoModal]);
 
-  const handleCopyMarkdown = () => {
-    const md = `# Vmail API Documentation
+  const turnstileTheme = resolvedTheme === "dark" ? "dark" : "light";
 
-RESTful API for programmatic access to https://vmail.dev temporary email services.
+  const handleCopyMarkdown = () => {
+    const md = `# TempMail API Documentation
+
+RESTful API for programmatic access to https://tempmail.dev temporary email services.
 
 ## Authentication
 
@@ -62,12 +64,12 @@ Authorization: Bearer your-api-key
 ## Base URL
 
 \`\`\`
-https://vmail.dev/api/v1
+https://tempmail.dev/v1
 \`\`\`
 
 ## Endpoints
 
-### POST /mailboxes
+### POST /mail
 
 Create a new temporary mailbox.
 
@@ -95,7 +97,7 @@ Create a new temporary mailbox.
 }
 \`\`\`
 
-### GET /mailboxes/:id
+### GET /mail/:id
 
 Get mailbox information.
 
@@ -114,7 +116,7 @@ Get mailbox information.
 }
 \`\`\`
 
-### GET /mailboxes/:id/messages
+### GET /mail/:id/messages
 
 Get inbox messages with pagination.
 
@@ -149,7 +151,7 @@ Get inbox messages with pagination.
 }
 \`\`\`
 
-### GET /mailboxes/:id/messages/:messageId
+### GET /mail/:id/messages/:messageId
 
 Get full message details.
 
@@ -174,7 +176,7 @@ Get full message details.
 }
 \`\`\`
 
-### DELETE /mailboxes/:id/messages/:messageId
+### DELETE /mail/:id/messages/:messageId
 
 Delete a specific message.
 
@@ -216,7 +218,7 @@ All errors follow a consistent format:
 
 \`\`\`bash
 # Create a new mailbox
-curl -X POST https://vmail.dev/api/v1/mailboxes \\
+curl -X POST https://tempmail.dev/v1/mail \\
   -H "X-API-Key: your-api-key" \\
   -H "Content-Type: application/json" \\
   -d '{"domain": "example.com"}'
@@ -224,11 +226,11 @@ curl -X POST https://vmail.dev/api/v1/mailboxes \\
 # Response: { "data": { "id": "abc123", "address": "...", ... } }
 
 # Check inbox
-curl https://vmail.dev/api/v1/mailboxes/abc123/messages \\
+curl https://tempmail.dev/v1/mail/abc123/messages \\
   -H "X-API-Key: your-api-key"
 
 # Get specific message
-curl https://vmail.dev/api/v1/mailboxes/abc123/messages/msg_001 \\
+curl https://tempmail.dev/v1/mail/abc123/messages/msg_001 \\
   -H "X-API-Key: your-api-key"
 \`\`\`
 
@@ -241,7 +243,6 @@ API requests are rate limited based on your API Key configuration. Default limit
     });
   };
 
-  // 添加代码高亮样式
   useEffect(() => {
     if (contentRef.current) {
       const codeBlocks = contentRef.current.querySelectorAll("pre code");
@@ -251,7 +252,6 @@ API requests are rate limited based on your API Key configuration. Default limit
     }
   }, []);
 
-  // 创建 API Key
   const handleCreateApiKey = async () => {
     if (!config.openApiEnabled) {
       toast.error("API access is currently disabled");
@@ -291,48 +291,51 @@ API requests are rate limited based on your API Key configuration. Default limit
     }
   };
 
-  // 重置状态，允许创建新的 API Key
   const handleCreateAnother = () => {
     setCreatedApiKey(null);
     setTurnstileToken("");
     setKeyName("");
   };
 
+  const sectionClass = "bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-700/50 p-4 mb-6";
+  const codeBlockClass = "bg-gray-50 dark:bg-zinc-950 rounded overflow-x-auto text-sm";
+  const preClass = "bg-gray-50 dark:bg-zinc-950 p-3 rounded overflow-x-auto";
+
   return (
-    <div className="min-h-screen bg-[#1f2023] text-white py-8 px-4 md:px-8 mt-16">
+    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-gray-900 dark:text-white py-8 px-4 md:px-8 mt-16">
       {config.showAff && showPromoModal && (
         <InfoModal
           showModal={showPromoModal}
           setShowModal={setShowPromoModal}
-          title="🎉 Vmail & NBility 联动福利">
-          <div className="space-y-4 text-gray-200">
+          title="🎉 TempMail & NBility 联动福利">
+          <div className="space-y-4 text-gray-700 dark:text-gray-200">
             <div className="text-center">
-              <p className="text-base font-semibold text-cyan-400 mb-1">
+              <p className="text-base font-semibold text-cyan-600 dark:text-cyan-400 mb-1">
                 注册即送 Claude Code、Codex 免费额度
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 一站式 AI 编程助手中转平台
               </p>
             </div>
-            <div className="bg-slate-700/50 rounded-lg p-3 space-y-2">
-              <h3 className="text-xs font-semibold text-white flex items-center gap-1.5">
-                <span className="text-cyan-400">✨</span> 核心优势
+            <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-3 space-y-2">
+              <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+                <span className="text-cyan-600 dark:text-cyan-400">✨</span> 核心优势
               </h3>
               <ul className="space-y-1.5 text-xs">
                 <li className="flex items-start gap-1.5">
-                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span className="text-green-600 dark:text-green-400 mt-0.5">✓</span>
                   <span>注册即用，快速接入 AI Coding 工作流</span>
                 </li>
                 <li className="flex items-start gap-1.5">
-                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span className="text-green-600 dark:text-green-400 mt-0.5">✓</span>
                   <span>两种付费模式，按次、按量计费灵活选择</span>
                 </li>
                 <li className="flex items-start gap-1.5">
-                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span className="text-green-600 dark:text-green-400 mt-0.5">✓</span>
                   <span>支持 Claude、Codex 等多模型灵活切换</span>
                 </li>
                 <li className="flex items-start gap-1.5">
-                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span className="text-green-600 dark:text-green-400 mt-0.5">✓</span>
                   <span>兼容 Claude Code、Cursor、RooCode 等 8+ 工具</span>
                 </li>
               </ul>
@@ -369,58 +372,54 @@ API requests are rate limited based on your API Key configuration. Default limit
                 </div>
               </div>
             </div>
-            {/* 按次套餐展示 */}
             <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-white flex items-center gap-1.5">
-                <span className="text-cyan-400">💰</span> 热门按次套餐
+              <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+                <span className="text-cyan-600 dark:text-cyan-400">💰</span> 热门按次套餐
               </h3>
               <div className="grid grid-cols-3 gap-2">
-                {/* Claude Nano Day */}
-                <div className="bg-slate-700/50 rounded-lg p-2.5 text-center border border-slate-600/50 hover:border-cyan-500/50 transition-colors">
-                  <div className="text-[10px] text-gray-400 mb-1">体验</div>
-                  <div className="text-sm font-bold text-white">¥6</div>
-                  <div className="text-[10px] text-cyan-400 mt-0.5">
+                <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-2.5 text-center border border-gray-200 dark:border-slate-600/50 hover:border-cyan-500/50 transition-colors">
+                  <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">体验</div>
+                  <div className="text-sm font-bold text-gray-900 dark:text-white">¥6</div>
+                  <div className="text-[10px] text-cyan-600 dark:text-cyan-400 mt-0.5">
                     100次/天
                   </div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">日卡</div>
+                  <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">日卡</div>
                 </div>
-                {/* Claude Mini Plus */}
-                <div className="bg-slate-700/50 rounded-lg p-2.5 text-center border border-cyan-500/50 relative">
+                <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-2.5 text-center border border-cyan-500/50 relative">
                   <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-cyan-500 text-[8px] text-white px-1.5 py-0.5 rounded-full font-semibold">
                     推荐
                   </div>
-                  <div className="text-[10px] text-gray-400 mb-1">入门</div>
-                  <div className="text-sm font-bold text-white">
-                    <span className="line-through text-gray-500 text-[10px]">
+                  <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">入门</div>
+                  <div className="text-sm font-bold text-gray-900 dark:text-white">
+                    <span className="line-through text-gray-400 dark:text-gray-500 text-[10px]">
                       ¥796
                     </span>{" "}
                     ¥398
                   </div>
-                  <div className="text-[10px] text-cyan-400 mt-0.5">
+                  <div className="text-[10px] text-cyan-600 dark:text-cyan-400 mt-0.5">
                     1000次/天
                   </div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">
+                  <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
                     月付·5折
                   </div>
                 </div>
-                {/* Claude Premium */}
-                <div className="bg-slate-700/50 rounded-lg p-2.5 text-center border border-slate-600/50 hover:border-cyan-500/50 transition-colors">
-                  <div className="text-[10px] text-gray-400 mb-1">旗舰</div>
-                  <div className="text-sm font-bold text-white">
-                    <span className="line-through text-gray-500 text-[10px]">
+                <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-2.5 text-center border border-gray-200 dark:border-slate-600/50 hover:border-cyan-500/50 transition-colors">
+                  <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">旗舰</div>
+                  <div className="text-sm font-bold text-gray-900 dark:text-white">
+                    <span className="line-through text-gray-400 dark:text-gray-500 text-[10px]">
                       ¥1598
                     </span>{" "}
                     ¥799
                   </div>
-                  <div className="text-[10px] text-cyan-400 mt-0.5">
+                  <div className="text-[10px] text-cyan-600 dark:text-cyan-400 mt-0.5">
                     3000次/天
                   </div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">
+                  <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
                     月付·5折
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] text-gray-500 text-center">
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center">
                 支持 Claude Opus 4.6 / Sonnet 4.6 等全系模型
               </p>
             </div>
@@ -433,8 +432,8 @@ API requests are rate limited based on your API Key configuration. Default limit
                 className="block w-full text-center rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 font-bold text-white shadow-lg shadow-cyan-500/50 hover:shadow-cyan-500/70 hover:scale-[1.02] transition-all duration-200">
                 🚀 立即注册领取免费额度
               </a>
-              <p className="text-[10px] text-center text-gray-500 mt-2">
-                通过 Vmail 专属邀请链接注册，享受额外优惠
+              <p className="text-[10px] text-center text-gray-400 dark:text-gray-500 mt-2">
+                通过 TempMail 专属邀请链接注册，享受额外优惠
               </p>
             </div>
           </div>
@@ -442,12 +441,12 @@ API requests are rate limited based on your API Key configuration. Default limit
       )}
       <div className="max-w-4xl mx-auto" ref={contentRef}>
         {/* Header */}
-        <div className="mb-8 pb-6 border-b border-gray-700">
-          <h1 className="text-3xl font-bold text-cyan-400 mb-2">
+        <div className="mb-8 pb-6 border-b border-gray-200 dark:border-zinc-700">
+          <h1 className="text-3xl font-bold text-cyan-600 dark:text-cyan-400 mb-2">
             {t("API Documentation")}
           </h1>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <p className="text-gray-400">
+            <p className="text-gray-500 dark:text-gray-400">
               {t(
                 "RESTful API for programmatic access to temporary email services",
               )}
@@ -455,7 +454,7 @@ API requests are rate limited based on your API Key configuration. Default limit
             <button
               type="button"
               onClick={handleCopyMarkdown}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors flex-shrink-0 w-fit">
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-lg transition-colors flex-shrink-0 w-fit">
               <svg
                 className="w-4 h-4"
                 fill="none"
@@ -475,12 +474,12 @@ API requests are rate limited based on your API Key configuration. Default limit
             <button
               type="button"
               onClick={() => setShowPromoModal(true)}
-              className="mt-4 text-left text-sm text-cyan-400 hover:text-cyan-300 transition-colors underline underline-offset-4 decoration-cyan-500/60">
-              Vmail & NBility 联动注册送 Claude Code、Codex 免费额度
+              className="mt-4 text-left text-sm text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors underline underline-offset-4 decoration-cyan-500/60">
+              TempMail & NBility 联动注册送 Claude Code、Codex 免费额度
             </button>
           )}
           {!config.openApiEnabled && (
-            <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            <div className="mt-4 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-100">
               当前管理员已禁用 API 访问，若有需要请自行部署。
             </div>
           )}
@@ -488,22 +487,21 @@ API requests are rate limited based on your API Key configuration. Default limit
 
         {/* Get API Key Section */}
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-cyan-300 mb-4">
+          <h2 className="text-2xl font-semibold text-cyan-600 dark:text-cyan-300 mb-4">
             {t("Get API Key")}
           </h2>
-          <div className="bg-gray-800 rounded-lg p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-700/50 p-4">
             {createdApiKey ? (
-              // 显示创建的 API Key
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
                     {t("Created")}
                   </span>
                 </div>
-                <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4 mb-4">
+                <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-600/50 rounded-lg p-4 mb-4">
                   <div className="flex items-start gap-2">
                     <svg
-                      className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0"
+                      className="w-5 h-5 text-yellow-600 dark:text-yellow-500 mt-0.5 flex-shrink-0"
                       fill="currentColor"
                       viewBox="0 0 20 20">
                       <path
@@ -513,10 +511,10 @@ API requests are rate limited based on your API Key configuration. Default limit
                       />
                     </svg>
                     <div>
-                      <p className="text-yellow-200 font-semibold text-sm">
+                      <p className="text-yellow-800 dark:text-yellow-200 font-semibold text-sm">
                         {t("Important: Save your API Key now!")}
                       </p>
-                      <p className="text-yellow-300/80 text-xs mt-1">
+                      <p className="text-yellow-700 dark:text-yellow-300/80 text-xs mt-1">
                         {t(
                           "This is the only time you will see the full API Key. It cannot be retrieved later.",
                         )}
@@ -524,9 +522,9 @@ API requests are rate limited based on your API Key configuration. Default limit
                     </div>
                   </div>
                 </div>
-                <div className="bg-gray-900 p-4 rounded-lg mb-4">
+                <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-lg mb-4">
                   <div className="flex items-center justify-between gap-2">
-                    <code className="text-green-400 text-sm break-all flex-1">
+                    <code className="text-green-600 dark:text-green-400 text-sm break-all flex-1">
                       {createdApiKey}
                     </code>
                     <CopyButton
@@ -537,26 +535,25 @@ API requests are rate limited based on your API Key configuration. Default limit
                 </div>
                 <button
                   onClick={handleCreateAnother}
-                  className="text-cyan-400 hover:text-cyan-300 text-sm underline">
+                  className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 text-sm underline">
                   {t("Create another API Key")}
                 </button>
               </div>
             ) : (
-              // 创建 API Key 表单
               <div>
-                <p className="text-gray-300 mb-4">
+                <p className="text-gray-700 dark:text-gray-300 mb-4">
                   {t(
                     "Create a free API Key to access the API. Each key has a rate limit of 100 requests per minute.",
                   )}
                 </p>
                 {!config.openApiEnabled && (
-                  <p className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+                  <p className="mb-4 rounded-lg border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-100">
                     当前实例已关闭 API 调用与 API Key 创建功能。
                   </p>
                 )}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">
+                    <label className="block text-sm text-gray-500 dark:text-gray-400 mb-2">
                       {t("Key Name")} ({t("optional")})
                     </label>
                     <input
@@ -564,25 +561,25 @@ API requests are rate limited based on your API Key configuration. Default limit
                       value={keyName}
                       onChange={(e) => setKeyName(e.target.value)}
                       placeholder={t("e.g., My Project")}
-                      className="w-full md:w-1/2 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                      className="w-full md:w-1/2 px-3 py-2 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-cyan-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">
+                    <label className="block text-sm text-gray-500 dark:text-gray-400 mb-2">
                       {t("Verification")}
                     </label>
-                    <div className="[&_iframe]:!w-full h-[65px] max-w-[300px] bg-gray-700 rounded">
+                    <div className="[&_iframe]:!w-full h-[65px] max-w-[300px] bg-gray-100 dark:bg-zinc-800 rounded">
                       <Turnstile
                         siteKey={config.turnstileKey}
                         onSuccess={setTurnstileToken}
-                        options={{ theme: "dark" }}
+                        options={{ theme: turnstileTheme }}
                       />
                     </div>
                   </div>
                   <button
                     onClick={handleCreateApiKey}
                     disabled={!config.openApiEnabled || !turnstileToken || isCreating}
-                    className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors">
+                    className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-400 dark:disabled:bg-zinc-600 disabled:cursor-not-allowed rounded-lg font-medium text-white transition-colors">
                     {isCreating ? t("Creating...") : t("Create API Key")}
                   </button>
                 </div>
@@ -593,23 +590,23 @@ API requests are rate limited based on your API Key configuration. Default limit
 
         {/* Authentication */}
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-cyan-300 mb-4">
+          <h2 className="text-2xl font-semibold text-cyan-600 dark:text-cyan-300 mb-4">
             {t("Authentication")}
           </h2>
-          <div className="bg-gray-800 rounded-lg p-4 mb-4">
-            <p className="text-gray-300 mb-3">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-700/50 p-4 mb-4">
+            <p className="text-gray-700 dark:text-gray-300 mb-3">
               {t(
                 "All API requests require an API Key. Include it in the request header:",
               )}
             </p>
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto">
-              <code className="text-green-400">X-API-Key: your-api-key</code>
+            <pre className={preClass}>
+              <code className="text-green-600 dark:text-green-400">X-API-Key: your-api-key</code>
             </pre>
-            <p className="text-gray-400 text-sm mt-2">
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
               {t("Or use Authorization header:")}
             </p>
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto mt-2">
-              <code className="text-green-400">
+            <pre className={`${preClass} mt-2`}>
+              <code className="text-green-600 dark:text-green-400">
                 Authorization: Bearer your-api-key
               </code>
             </pre>
@@ -618,51 +615,51 @@ API requests are rate limited based on your API Key configuration. Default limit
 
         {/* Base URL */}
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-cyan-300 mb-4">
+          <h2 className="text-2xl font-semibold text-cyan-600 dark:text-cyan-300 mb-4">
             Base URL
           </h2>
-          <div className="bg-gray-800 rounded-lg p-4">
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto">
-              <code className="text-yellow-400">https://vmail.dev/api/v1</code>
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-700/50 p-4">
+            <pre className={preClass}>
+              <code className="text-yellow-600 dark:text-yellow-400">https://tempmail.dev/v1</code>
             </pre>
           </div>
         </section>
 
         {/* Endpoints */}
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-cyan-300 mb-4">
+          <h2 className="text-2xl font-semibold text-cyan-600 dark:text-cyan-300 mb-4">
             {t("Endpoints")}
           </h2>
 
-          {/* POST /mailboxes */}
-          <div className="bg-gray-800 rounded-lg p-4 mb-6">
+          {/* POST /mail */}
+          <div className={sectionClass}>
             <div className="flex items-center gap-3 mb-3 min-w-0">
               <span className="bg-green-600 text-white px-2 py-1 rounded text-sm font-mono">
                 POST
               </span>
-              <code className="text-white font-mono break-all">/mailboxes</code>
+              <code className="text-gray-900 dark:text-white font-mono break-all">/mail</code>
             </div>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
               {t("Create a new temporary mailbox")}
             </p>
 
-            <h4 className="text-cyan-200 font-semibold mb-2">
+            <h4 className="text-cyan-700 dark:text-cyan-200 font-semibold mb-2">
               {t("Request Body")} (optional)
             </h4>
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto mb-4 text-sm">
-              <code className="text-gray-300">{`{
+            <pre className={`${codeBlockClass} p-3 mb-4`}>
+              <code className="text-gray-700 dark:text-gray-300">{`{
   "localPart": "mytest",     // Optional: custom local part
   "domain": "example.com",   // Optional: email domain
   "expiresIn": 86400         // Optional: expiry in seconds (default: 24h)
 }`}</code>
             </pre>
 
-            <h4 className="text-cyan-200 font-semibold mb-2">
+            <h4 className="text-cyan-700 dark:text-cyan-200 font-semibold mb-2">
               {t("Response")}{" "}
-              <span className="text-green-400">201 Created</span>
+              <span className="text-green-600 dark:text-green-400">201 Created</span>
             </h4>
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto text-sm">
-              <code className="text-gray-300">{`{
+            <pre className={`${codeBlockClass} p-3`}>
+              <code className="text-gray-700 dark:text-gray-300">{`{
   "data": {
     "id": "abc123xyz",
     "address": "mytest@example.com",
@@ -674,23 +671,23 @@ API requests are rate limited based on your API Key configuration. Default limit
             </pre>
           </div>
 
-          {/* GET /mailboxes/:id */}
-          <div className="bg-gray-800 rounded-lg p-4 mb-6">
+          {/* GET /mail/:id */}
+          <div className={sectionClass}>
             <div className="flex items-center gap-3 mb-3 min-w-0">
               <span className="bg-blue-600 text-white px-2 py-1 rounded text-sm font-mono">
                 GET
               </span>
-              <code className="text-white font-mono break-all">
-                /mailboxes/:id
+              <code className="text-gray-900 dark:text-white font-mono break-all">
+                /mail/:id
               </code>
             </div>
-            <p className="text-gray-300 mb-4">{t("Get mailbox information")}</p>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">{t("Get mailbox information")}</p>
 
-            <h4 className="text-cyan-200 font-semibold mb-2">
-              {t("Response")} <span className="text-green-400">200 OK</span>
+            <h4 className="text-cyan-700 dark:text-cyan-200 font-semibold mb-2">
+              {t("Response")} <span className="text-green-600 dark:text-green-400">200 OK</span>
             </h4>
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto text-sm">
-              <code className="text-gray-300">{`{
+            <pre className={`${codeBlockClass} p-3`}>
+              <code className="text-gray-700 dark:text-gray-300">{`{
   "data": {
     "id": "abc123xyz",
     "address": "mytest@example.com",
@@ -703,44 +700,44 @@ API requests are rate limited based on your API Key configuration. Default limit
             </pre>
           </div>
 
-          {/* GET /mailboxes/:id/messages */}
-          <div className="bg-gray-800 rounded-lg p-4 mb-6">
+          {/* GET /mail/:id/messages */}
+          <div className={sectionClass}>
             <div className="flex items-center gap-3 mb-3 min-w-0">
               <span className="bg-blue-600 text-white px-2 py-1 rounded text-sm font-mono">
                 GET
               </span>
-              <code className="text-white font-mono break-all">
-                /mailboxes/:id/messages
+              <code className="text-gray-900 dark:text-white font-mono break-all">
+                /mail/:id/messages
               </code>
             </div>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
               {t("Get inbox messages with pagination")}
             </p>
 
-            <h4 className="text-cyan-200 font-semibold mb-2">
+            <h4 className="text-cyan-700 dark:text-cyan-200 font-semibold mb-2">
               {t("Query Parameters")}
             </h4>
             <div className="overflow-x-auto mb-4">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-gray-400 border-b border-gray-700">
+                  <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-zinc-700">
                     <th className="pb-2 pr-4">{t("Parameter")}</th>
                     <th className="pb-2 pr-4">{t("Type")}</th>
                     <th className="pb-2 pr-4">{t("Default")}</th>
                     <th className="pb-2">{t("Description")}</th>
                   </tr>
                 </thead>
-                <tbody className="text-gray-300">
-                  <tr className="border-b border-gray-700/50">
-                    <td className="py-2 pr-4 font-mono text-yellow-400">
+                <tbody className="text-gray-700 dark:text-gray-300">
+                  <tr className="border-b border-gray-100 dark:border-zinc-700/50">
+                    <td className="py-2 pr-4 font-mono text-yellow-600 dark:text-yellow-400">
                       page
                     </td>
                     <td className="py-2 pr-4">number</td>
                     <td className="py-2 pr-4">1</td>
                     <td className="py-2">{t("Page number")}</td>
                   </tr>
-                  <tr className="border-b border-gray-700/50">
-                    <td className="py-2 pr-4 font-mono text-yellow-400">
+                  <tr className="border-b border-gray-100 dark:border-zinc-700/50">
+                    <td className="py-2 pr-4 font-mono text-yellow-600 dark:text-yellow-400">
                       limit
                     </td>
                     <td className="py-2 pr-4">number</td>
@@ -748,7 +745,7 @@ API requests are rate limited based on your API Key configuration. Default limit
                     <td className="py-2">{t("Items per page (max 100)")}</td>
                   </tr>
                   <tr>
-                    <td className="py-2 pr-4 font-mono text-yellow-400">
+                    <td className="py-2 pr-4 font-mono text-yellow-600 dark:text-yellow-400">
                       sort
                     </td>
                     <td className="py-2 pr-4">string</td>
@@ -759,11 +756,11 @@ API requests are rate limited based on your API Key configuration. Default limit
               </table>
             </div>
 
-            <h4 className="text-cyan-200 font-semibold mb-2">
-              {t("Response")} <span className="text-green-400">200 OK</span>
+            <h4 className="text-cyan-700 dark:text-cyan-200 font-semibold mb-2">
+              {t("Response")} <span className="text-green-600 dark:text-green-400">200 OK</span>
             </h4>
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto text-sm">
-              <code className="text-gray-300">{`{
+            <pre className={`${codeBlockClass} p-3`}>
+              <code className="text-gray-700 dark:text-gray-300">{`{
   "data": [
     {
       "id": "msg_001",
@@ -784,25 +781,25 @@ API requests are rate limited based on your API Key configuration. Default limit
             </pre>
           </div>
 
-          {/* GET /mailboxes/:id/messages/:messageId */}
-          <div className="bg-gray-800 rounded-lg p-4 mb-6">
+          {/* GET /mail/:id/messages/:messageId */}
+          <div className={sectionClass}>
             <div className="flex items-center gap-3 mb-3 min-w-0">
               <span className="bg-blue-600 text-white px-2 py-1 rounded text-sm font-mono">
                 GET
               </span>
-              <code className="text-white font-mono break-all">
-                /mailboxes/:id/messages/:messageId
+              <code className="text-gray-900 dark:text-white font-mono break-all">
+                /mail/:id/messages/:messageId
               </code>
             </div>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
               {t("Get full message details")}
             </p>
 
-            <h4 className="text-cyan-200 font-semibold mb-2">
-              {t("Response")} <span className="text-green-400">200 OK</span>
+            <h4 className="text-cyan-700 dark:text-cyan-200 font-semibold mb-2">
+              {t("Response")} <span className="text-green-600 dark:text-green-400">200 OK</span>
             </h4>
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto text-sm">
-              <code className="text-gray-300">{`{
+            <pre className={`${codeBlockClass} p-3`}>
+              <code className="text-gray-700 dark:text-gray-300">{`{
   "data": {
     "id": "msg_001",
     "messageId": "<unique-id@sender.com>",
@@ -821,25 +818,25 @@ API requests are rate limited based on your API Key configuration. Default limit
             </pre>
           </div>
 
-          {/* DELETE /mailboxes/:id/messages/:messageId */}
-          <div className="bg-gray-800 rounded-lg p-4 mb-6">
+          {/* DELETE /mail/:id/messages/:messageId */}
+          <div className={sectionClass}>
             <div className="flex items-center gap-3 mb-3 min-w-0">
               <span className="bg-red-600 text-white px-2 py-1 rounded text-sm font-mono">
                 DELETE
               </span>
-              <code className="text-white font-mono break-all">
-                /mailboxes/:id/messages/:messageId
+              <code className="text-gray-900 dark:text-white font-mono break-all">
+                /mail/:id/messages/:messageId
               </code>
             </div>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
               {t("Delete a specific message")}
             </p>
 
-            <h4 className="text-cyan-200 font-semibold mb-2">
-              {t("Response")} <span className="text-green-400">200 OK</span>
+            <h4 className="text-cyan-700 dark:text-cyan-200 font-semibold mb-2">
+              {t("Response")} <span className="text-green-600 dark:text-green-400">200 OK</span>
             </h4>
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto text-sm">
-              <code className="text-gray-300">{`{
+            <pre className={`${codeBlockClass} p-3`}>
+              <code className="text-gray-700 dark:text-gray-300">{`{
   "data": {
     "deleted": true,
     "id": "msg_001"
@@ -851,15 +848,15 @@ API requests are rate limited based on your API Key configuration. Default limit
 
         {/* Error Responses */}
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-cyan-300 mb-4">
+          <h2 className="text-2xl font-semibold text-cyan-600 dark:text-cyan-300 mb-4">
             {t("Error Responses")}
           </h2>
-          <div className="bg-gray-800 rounded-lg p-4">
-            <p className="text-gray-300 mb-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-700/50 p-4">
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
               {t("All errors follow a consistent format:")}
             </p>
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto text-sm mb-4">
-              <code className="text-gray-300">{`{
+            <pre className={`${codeBlockClass} p-3 mb-4`}>
+              <code className="text-gray-700 dark:text-gray-300">{`{
   "error": {
     "code": "ERROR_CODE",
     "message": "Human readable message"
@@ -867,28 +864,28 @@ API requests are rate limited based on your API Key configuration. Default limit
 }`}</code>
             </pre>
 
-            <h4 className="text-cyan-200 font-semibold mb-2">
+            <h4 className="text-cyan-700 dark:text-cyan-200 font-semibold mb-2">
               {t("Error Codes")}
             </h4>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-gray-400 border-b border-gray-700">
+                  <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-zinc-700">
                     <th className="pb-2 pr-4">Code</th>
                     <th className="pb-2 pr-4">HTTP Status</th>
                     <th className="pb-2">{t("Description")}</th>
                   </tr>
                 </thead>
-                <tbody className="text-gray-300">
-                  <tr className="border-b border-gray-700/50">
-                    <td className="py-2 pr-4 font-mono text-red-400">
+                <tbody className="text-gray-700 dark:text-gray-300">
+                  <tr className="border-b border-gray-100 dark:border-zinc-700/50">
+                    <td className="py-2 pr-4 font-mono text-red-600 dark:text-red-400">
                       UNAUTHORIZED
                     </td>
                     <td className="py-2 pr-4">401</td>
                     <td className="py-2">{t("Missing or invalid API Key")}</td>
                   </tr>
-                  <tr className="border-b border-gray-700/50">
-                    <td className="py-2 pr-4 font-mono text-red-400">
+                  <tr className="border-b border-gray-100 dark:border-zinc-700/50">
+                    <td className="py-2 pr-4 font-mono text-red-600 dark:text-red-400">
                       FORBIDDEN
                     </td>
                     <td className="py-2 pr-4">403</td>
@@ -896,22 +893,22 @@ API requests are rate limited based on your API Key configuration. Default limit
                       {t("API Key disabled/expired or no access")}
                     </td>
                   </tr>
-                  <tr className="border-b border-gray-700/50">
-                    <td className="py-2 pr-4 font-mono text-red-400">
+                  <tr className="border-b border-gray-100 dark:border-zinc-700/50">
+                    <td className="py-2 pr-4 font-mono text-red-600 dark:text-red-400">
                       NOT_FOUND
                     </td>
                     <td className="py-2 pr-4">404</td>
                     <td className="py-2">{t("Resource not found")}</td>
                   </tr>
-                  <tr className="border-b border-gray-700/50">
-                    <td className="py-2 pr-4 font-mono text-red-400">
+                  <tr className="border-b border-gray-100 dark:border-zinc-700/50">
+                    <td className="py-2 pr-4 font-mono text-red-600 dark:text-red-400">
                       VALIDATION_ERROR
                     </td>
                     <td className="py-2 pr-4">400</td>
                     <td className="py-2">{t("Invalid request parameters")}</td>
                   </tr>
                   <tr>
-                    <td className="py-2 pr-4 font-mono text-red-400">
+                    <td className="py-2 pr-4 font-mono text-red-600 dark:text-red-400">
                       CONFLICT
                     </td>
                     <td className="py-2 pr-4">409</td>
@@ -925,16 +922,16 @@ API requests are rate limited based on your API Key configuration. Default limit
 
         {/* Example Usage */}
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-cyan-300 mb-4">
+          <h2 className="text-2xl font-semibold text-cyan-600 dark:text-cyan-300 mb-4">
             {t("Example Usage")}
           </h2>
-          <div className="bg-gray-800 rounded-lg p-4">
-            <h4 className="text-cyan-200 font-semibold mb-2">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-700/50 p-4">
+            <h4 className="text-cyan-700 dark:text-cyan-200 font-semibold mb-2">
               {t("Create mailbox and check for messages")}
             </h4>
-            <pre className="bg-gray-900 p-3 rounded overflow-x-auto text-sm">
-              <code className="text-gray-300">{`# Create a new mailbox
-curl -X POST https://vmail.dev/api/v1/mailboxes \\
+            <pre className={`${codeBlockClass} p-3`}>
+              <code className="text-gray-700 dark:text-gray-300">{`# Create a new mailbox
+curl -X POST https://tempmail.dev/v1/mail \\
   -H "X-API-Key: your-api-key" \\
   -H "Content-Type: application/json" \\
   -d '{"domain": "example.com"}'
@@ -942,11 +939,11 @@ curl -X POST https://vmail.dev/api/v1/mailboxes \\
 # Response: { "data": { "id": "abc123", "address": "...", ... } }
 
 # Check inbox
-curl https://vmail.dev/api/v1/mailboxes/abc123/messages \\
+curl https://tempmail.dev/v1/mail/abc123/messages \\
   -H "X-API-Key: your-api-key"
 
 # Get specific message
-curl https://vmail.dev/api/v1/mailboxes/abc123/messages/msg_001 \\
+curl https://tempmail.dev/v1/mail/abc123/messages/msg_001 \\
   -H "X-API-Key: your-api-key"`}</code>
             </pre>
           </div>
@@ -954,11 +951,11 @@ curl https://vmail.dev/api/v1/mailboxes/abc123/messages/msg_001 \\
 
         {/* Rate Limits */}
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-cyan-300 mb-4">
+          <h2 className="text-2xl font-semibold text-cyan-600 dark:text-cyan-300 mb-4">
             {t("Rate Limits")}
           </h2>
-          <div className="bg-gray-800 rounded-lg p-4">
-            <p className="text-gray-300">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-700/50 p-4">
+            <p className="text-gray-700 dark:text-gray-300">
               {t(
                 "API requests are rate limited based on your API Key configuration. Default limit is 100 requests per minute.",
               )}

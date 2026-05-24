@@ -3,8 +3,7 @@ import clsx from 'clsx';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 // 关键修正：为图标导入添加 .tsx 扩展名
-import CheckIcon from './icons/CheckIcon.tsx'; 
-import CopyIcon from './icons/CopyIcon.tsx';   
+import { CheckIcon, CopyIcon } from "./icons";   
 
 interface CopyButtonProps {
   text: string;

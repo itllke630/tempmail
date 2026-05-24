@@ -17,6 +17,8 @@ v1.use('/*', requireOpenApi);
 v1.use('/*', apiKeyAuth);
 
 // 挂载邮箱路由
+v1.route('/mail', mailboxesRouter);
+// 保留旧路径以兼容已有调用
 v1.route('/mailboxes', mailboxesRouter);
 
 export default v1;

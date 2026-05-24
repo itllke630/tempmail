@@ -1,17 +1,23 @@
 # 1. 目标与部署产物
 
-本文档用于让 AI 助手直接读取并执行部署Github项目：https://github.com/oiov/vmail 。目标是将 vmail 部署到 Cloudflare Workers + D1，并启用以下能力：
+本文档用于让 AI 助手直接读取并执行部署 GitHub 项目：https://github.com/oiov/vmail 。目标是将 TempMail 部署到 Cloudflare Workers + D1，并启用以下能力：
 
 - 站点统计增长率（today vs yesterday）
 - Turnstile 可选（未配置密钥时自动 bypass）
 - 站点密码访问控制（`PASSWORD` 可选）
 - API Key 每分钟限速（环境变量可配置，默认 `100`）
+- 多域名独立 TTL 配置（`DOMAIN_TTL_CONFIG`）
+- OpenAPI 访问控制（`ENABLE_OPENAPI` 可选）
+- 管理员 API Key 生成（`POST /api/admin/generate-key`，PASSWORD 验证）
 
 部署后关键接口合同：
 
-- `GET /config` 返回：`turnstileEnabled`、`sitePasswordEnabled`、`apiRateLimitPerMinute`、`openApiEnabled`
+- `GET /config` 返回：`turnstileEnabled`、`sitePasswordEnabled`、`apiRateLimitPerMinute`、`openApiEnabled`、`domainTtlConfig`
 - `GET /api/stats` 返回：`totals`、`today`、`yesterday`
 - `POST /auth/unlock`、`GET /auth/status`、`POST /auth/logout`
+- `POST /api/admin/generate-key` 管理员生成 API Key（需要 PASSWORD）
+- `POST /api/api-keys` 公开创建 API Key（需要 Turnstile，受 `ENABLE_OPENAPI` 控制）
+- `POST /v1/mail` 创建邮箱，`GET /v1/mail/:id` 获取邮箱信息（需要 API Key，受 `ENABLE_OPENAPI` 控制）
 
 # 2. 前置条件与账号准备
 
@@ -37,14 +43,17 @@
 - `TURNSTILE_SECRET`（可选）
 - `PASSWORD`（可选；为空时站点默认公开）
 - `API_RATE_LIMIT_PER_MINUTE`（可选；非法值或缺省回退到 `100`）
-- `ENABLE_OPENAPI`（可选；默认开启，设置为 `false` 时禁用 API Key 创建与 `/api/v1/*`）
+- `ENABLE_OPENAPI`（可选；默认开启，设置为 `false` 时禁用 API Key 创建与 `/v1/*`）
+- `SHOW_AFF`（可选；设置为 `true` 时展示推广位）
+- `DOMAIN_TTL_CONFIG`（可选；按域名配置邮件保留时间，格式：`domain=hours,domain=hours`）
 
 行为说明：
 
-- 当 `TURNSTILE_KEY` 和 `TURNSTILE_SECRET` 任一缺失时，前后端都进入“无需人机验证”模式。
-- 当 `PASSWORD` 为空时，前端不会出现站点解锁门禁；有值时需要先解锁站点。
-- `API_RATE_LIMIT_PER_MINUTE` 作用于 v1 API Key 中间件，按“每个 API Key、每分钟固定窗口”限流。
-- 当 `ENABLE_OPENAPI=false` 时，`/api/api-keys` 与 `/api/v1/*` 会统一返回 `403 OPENAPI_DISABLED`，`/api-docs` 页面仅展示提示。
+- 当 `TURNSTILE_KEY` 和 `TURNSTILE_SECRET` 任一缺失时，前后端都进入"无需人机验证"模式。
+- 当 `PASSWORD` 为空时，前端不会出现站点解锁门禁；有值时需要先解锁站点。同时 `PASSWORD` 也是管理员 API Key 生成的验证凭据。
+- `API_RATE_LIMIT_PER_MINUTE` 作用于 v1 API Key 中间件，按"每个 API Key、每分钟固定窗口"限流。
+- 当 `ENABLE_OPENAPI=false` 时，`/api/api-keys` 与 `/v1/*` 统一返回 `403 OPENAPI_DISABLED`，`/api-docs` 页面仅展示提示。
+- `DOMAIN_TTL_CONFIG` 允许不同域名设置不同的邮件保留时间。格式示例：`example.com=720,example.net=24`。未配置的域名默认保留 24 小时。
 
 # 4. 数据库迁移与基础初始化
 
@@ -91,6 +100,7 @@
      - `sitePasswordEnabled`
      - `apiRateLimitPerMinute`
      - `openApiEnabled`
+     - `domainTtlConfig`
 2. 统计合同：
    - 请求 `GET /api/stats`
    - 断言返回结构含 `totals/today/yesterday`
@@ -103,14 +113,19 @@
 4. Turnstile 可选：
    - 未配置密钥时，创建邮箱地址流程可直接通过
    - 配置密钥后，需有效 token
-5. API 限速：
+5. API 限速与 OpenAPI 控制：
    - 使用同一 API Key 连续请求 v1 API
    - 超过阈值返回 `429`
    - 响应头包含：`X-RateLimit-Limit`、`X-RateLimit-Remaining`、`Retry-After`
-   - 若 `ENABLE_OPENAPI=false`：`/api/api-keys` 与 `/api/v1/*` 返回 `403`
-6. 前端展示：
+   - 若 `ENABLE_OPENAPI=false`：`/api/api-keys` 与 `/v1/*` 返回 `403`
+6. 管理员 API Key 生成：
+   - `POST /api/admin/generate-key`，使用 PASSWORD 验证
+   - 成功返回生成的 API Key
+   - 未设置 PASSWORD 时返回 `403 DISABLED`
+7. 前端展示：
    - 首页 SiteStats 卡片显示增长率（today vs yesterday）
    - `/api-docs` 在 `openApiEnabled=false` 时展示禁用提示
+   - 亮/暗模式切换正常
 
 # 7. 常见问题与回滚策略
 
@@ -120,9 +135,10 @@
 - 站点一直锁定：检查 `PASSWORD` 是否设置、浏览器是否保存了解锁 cookie。
 - 限速不生效：确认请求走的是 v1 API，并携带 API Key。
 - Turnstile 状态异常：确认前后端读取的是同一组环境变量。
+- API Key 生成失败：检查 `ENABLE_OPENAPI` 是否被设置为 `false`。
 
 回滚策略：
 
 1. 先回滚 Worker 版本（代码回滚）。
 2. 若需要回滚数据结构，按 D1 迁移策略执行逆向迁移或恢复备份。
-3. 回滚后重复执行“部署后验收清单”中的 1~3 项，确保服务可用。
+3. 回滚后重复执行"部署后验收清单"中的 1~3 项，确保服务可用。

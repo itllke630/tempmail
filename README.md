@@ -1,18 +1,20 @@
 <div align="center">
   <a href="https://trendshift.io/repositories/8681" target="_blank"><img src="https://trendshift.io/api/badge/repositories/8681" alt="yesmore%2Fvmail | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-  <h1>𝐕𝐌𝐀𝐈𝐋.𝐃𝐄𝐕</h1>
-  <p><a href="/docs/github-action-tutorial.md">部署教程</a>  ·  <a href="/docs/ai-deploy.md">AI帮你部署</a>  ·
-  <a href="https://vmail.dev/api-docs" target="_blank">API 文档</a> · <a href="https://github.com/oiov/vmail/blob/main/README_en.md">English</a> | 简体中文</p>
+  <h1>TempMail</h1>
+  <p><a href="/docs/github-action-tutorial.md">部署教程</a>  ·  <a href="/docs/ai-deploy.md">AI帮你部署</a>  
   <p>使用 Cloudflare Email Worker 实现的临时电子邮件服务</p>
 </div>
 
-## 🌈 特点
+## 特点
 
 - 🎯 隐私友好，无需注册，开箱即用
 - ✈️ 支持邮件收发
 - ✨ 支持保存密码，找回邮箱
-- 😄 支持多域名后缀
+- 😄 支持多域名后缀，支持按域名独立配置 TTL
 - 🔌 **开放 RESTful API**，支持程序化调用
+- 🌓 亮色/暗色双模式
+- 🌍 12 种语言国际化
+- 🔐 支持 OTP 验证码提取
 - 🚀 快速部署，纯 Cloudflare 方案，无需服务器
 
 原理：
@@ -33,18 +35,11 @@
 
 ### 自动部署 (推荐)
 
-本项目已包含一个预先配置好的 GitHub Action 工作流，可以帮助您自动将 Vmail 应用部署到 Cloudflare。
+本项目已包含一个预先配置好的 GitHub Action 工作流，可以帮助您自动将 TempMail 应用部署到 Cloudflare。
 
 详细步骤请参考 [GitHub Action 自动部署教程](/docs/github-action-tutorial.md)。
 
 ### 手动部署步骤
-
-1.  **克隆项目到本地**
-    ```bash
-    git clone https://github.com/oiov/vmail
-    cd vmail
-    pnpm install
-    ```
 
 2.  **创建 Cloudflare D1 数据库**
     在 Cloudflare 控制台或使用 Wrangler CLI 创建一个 D1 数据库。
@@ -56,7 +51,7 @@
     ```bash
     # 构建前端应用
     pnpm run build
-    
+
     # 部署到 Cloudflare
     pnpm run deploy
     ```
@@ -75,10 +70,11 @@
 -   `EMAIL_DOMAIN`: 您的邮箱域名，例如 `example.com,example.net`。
 -   `TURNSTILE_KEY`: 您的 Turnstile 站点密钥，可选。
 -   `TURNSTILE_SECRET`: 您的 Turnstile 密钥，可选。
--   `PASSWORD`: 站点访问密码（可选）。
+-   `PASSWORD`: 站点访问密码（可选，同时也是管理员 API Key 生成的验证凭据）。
 -   `API_RATE_LIMIT_PER_MINUTE`: API 每分钟请求限制（可选，默认 100）。
--   `SHOW_AFF`: 是否展示推广弹框和常驻推广链接（可选，`true` 开启，默认不展示）。
--   `ENABLE_OPENAPI`: 是否开启 OpenAPI 调用功能（可选，默认开启；设置为 `false` 时禁用 API Key 创建与 `/api/v1/*` 调用）。
+-   `SHOW_AFF`: 是否展示推广位（可选，`true` 开启，默认不展示）。
+-   `ENABLE_OPENAPI`: 是否开启 OpenAPI 调用功能（可选，默认开启；设置为 `false` 时禁用 API Key 创建与 `/v1/*` 调用）。
+-   `DOMAIN_TTL_CONFIG`: 按域名配置邮件保留时间（可选，格式：`domain=hours,domain=hours`，如 `premium.com=720,free.com=24`）。
 
 ## 🔨 本地运行调试
 
@@ -99,42 +95,50 @@
 
 ## 📖 API 文档
 
-Vmail 提供完整的 RESTful API，支持通过程序化方式创建临时邮箱、查询收件箱。
+TempMail 提供完整的 RESTful API，支持通过程序化方式创建临时邮箱、查询收件箱。
 
 ### 获取 API Key
 
-访问 [API 文档页面](https://vmail.dev/api-docs) 创建免费的 API Key。
+使用管理员端点通过站点密码生成 API Key：
+
+```bash
+curl -X POST https://your-domain.com/api/admin/generate-key \
+  -H "Content-Type: application/json" \
+  -d '{"password": "your-admin-password", "name": "my-key"}'
+```
+
+> 注意：管理员端点需要站点已设置 `PASSWORD` 环境变量。
 
 ### API 端点
 
-| 方法     | 端点                                        | 说明                   |
-| -------- | ------------------------------------------- | ---------------------- |
-| `POST`   | `/api/v1/mailboxes`                         | 创建临时邮箱           |
-| `GET`    | `/api/v1/mailboxes/:id`                     | 获取邮箱信息           |
-| `GET`    | `/api/v1/mailboxes/:id/messages`            | 获取收件箱（支持分页） |
-| `GET`    | `/api/v1/mailboxes/:id/messages/:messageId` | 获取邮件详情           |
-| `DELETE` | `/api/v1/mailboxes/:id/messages/:messageId` | 删除邮件               |
+| 方法     | 端点                                  | 说明                   |
+| -------- | ------------------------------------- | ---------------------- |
+| `POST`   | `/v1/mail`                            | 创建临时邮箱           |
+| `GET`    | `/v1/mail/:id`                        | 获取邮箱信息           |
+| `GET`    | `/v1/mail/:id/messages`               | 获取收件箱（支持分页） |
+| `GET`    | `/v1/mail/:id/messages/:messageId`    | 获取邮件详情           |
+| `DELETE` | `/v1/mail/:id/messages/:messageId`    | 删除邮件               |
+
+> 旧路径 `/api/v1/mailboxes` 仍然可用，保持向后兼容。
 
 ### 快速开始
 
 ```bash
 # 1. 创建临时邮箱
-curl -X POST https://vmail.dev/api/v1/mailboxes \
+curl -X POST https://your-domain.com/v1/mail \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json"
 
 # 响应: { "data": { "id": "abc123", "address": "random@domain.com", ... } }
 
 # 2. 查询收件箱
-curl https://vmail.dev/api/v1/mailboxes/abc123/messages \
+curl https://your-domain.com/v1/mail/abc123/messages \
   -H "X-API-Key: your-api-key"
 
 # 3. 获取邮件详情
-curl https://vmail.dev/api/v1/mailboxes/abc123/messages/msg_001 \
+curl https://your-domain.com/v1/mail/abc123/messages/msg_001 \
   -H "X-API-Key: your-api-key"
 ```
-
-完整文档请访问：[https://vmail.dev/api-docs](https://vmail.dev/api-docs)
 
 ## 📝 License
 

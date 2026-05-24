@@ -8,7 +8,7 @@ import {
 // fix: 使用具名导入来修复构建错误
 import { Modal } from "./modal";
 import { useTranslation } from "react-i18next";
-import Close from "./icons/Close";
+import { Close } from "./icons";
 import toast from "react-hot-toast";
 
 // 定义组件的 props 类型
@@ -41,19 +41,19 @@ export default function PasswordModal({
 
   return (
     <Modal showModal={showPasswordModal} setShowModal={setShowPasswordModal}>
-      <div className="w-full overflow-hidden bg-white/95 backdrop-blur-xl shadow-xl p-4 md:max-w-3xl md:rounded-2xl md:border md:border-gray-200">
+      <div className="w-full overflow-hidden bg-white dark:bg-zinc-900/95 backdrop-blur-xl shadow-xl p-4 md:max-w-3xl md:rounded-2xl md:border md:border-gray-200 dark:md:border-zinc-700/50">
         {/* 修复：添加 onPointerDown 事件来阻止拖动事件与点击事件的冲突 */}
         <Close
-          className="absolute top-4 right-4 h-6 w-6 text-gray-500 hover:text-gray-700 cursor-pointer"
+          className="absolute top-4 right-4 h-6 w-6 text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
           onClick={() => setShowPasswordModal(false)}
           onPointerDown={(e) => e.stopPropagation()}
         />
 
-        <div className="flex flex-col items-center justify-center space-y-3 border-b border-gray-200 px-4 py-5 text-center md:px-16">
-          <h3 className="font-display text-2xl font-bold">
+        <div className="flex flex-col items-center justify-center space-y-3 border-b border-gray-200 dark:border-zinc-700 px-4 py-5 text-center md:px-16">
+          <h3 className="font-display text-2xl font-bold text-gray-900 dark:text-white">
             {t("Save password")}
           </h3>
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-zinc-400">
             {t("Save your password and continue using this email in 1 day")}
           </p>
         </div>
@@ -65,15 +65,15 @@ export default function PasswordModal({
             name="password"
             placeholder={t("Enter your password *")}
             required
-            className="rounded-md border border-slate-200 px-3 py-2 shadow-inner w-full"
+            className="rounded-md border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 px-3 py-2 shadow-inner w-full text-gray-900 dark:text-white"
           />
-          <p className="text-sm">
+          <p className="text-sm text-gray-600 dark:text-zinc-400">
             {t(
               "How to get a password? Click to create a temporary email and receive at least one email to generate a password"
             )}
             .
           </p>
-          <p className="text-sm text-yellow-600">
+          <p className="text-sm text-yellow-600 dark:text-yellow-400">
             {t(
               "Remember your password, otherwise your email will expire and cannot be retrieved"
             )}

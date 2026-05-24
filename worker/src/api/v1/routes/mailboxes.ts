@@ -97,7 +97,7 @@ function generateRandomLocalPart(): string {
 
 const mailboxesRouter = new Hono<{ Bindings: Env }>();
 
-// POST /api/v1/mailboxes - 创建邮箱
+// POST /v1/mail - 创建邮箱
 mailboxesRouter.post('/', async (c) => {
   const db = getD1DB(c.env.DB);
   const apiKey = c.get('apiKey') as { id: string; rateLimit: number };
@@ -183,7 +183,7 @@ mailboxesRouter.post('/', async (c) => {
   }
 });
 
-// GET /api/v1/mailboxes/:id - 获取邮箱信息
+// GET /v1/mail/:id - 获取邮箱信息
 mailboxesRouter.get('/:id', async (c) => {
   const db = getD1DB(c.env.DB);
   const apiKey = c.get('apiKey') as { id: string; rateLimit: number };
@@ -223,7 +223,7 @@ mailboxesRouter.get('/:id', async (c) => {
   });
 });
 
-// GET /api/v1/mailboxes/:id/messages - 获取收件箱
+// GET /v1/mail/:id/messages - 获取收件箱
 mailboxesRouter.get('/:id/messages', async (c) => {
   const db = getD1DB(c.env.DB);
   const apiKey = c.get('apiKey') as { id: string; rateLimit: number };
@@ -274,7 +274,7 @@ mailboxesRouter.get('/:id/messages', async (c) => {
   });
 });
 
-// GET /api/v1/mailboxes/:id/messages/:messageId - 获取邮件详情
+// GET /v1/mail/:id/messages/:messageId - 获取邮件详情
 mailboxesRouter.get('/:id/messages/:messageId', async (c) => {
   const db = getD1DB(c.env.DB);
   const apiKey = c.get('apiKey') as { id: string; rateLimit: number };
@@ -328,7 +328,7 @@ mailboxesRouter.get('/:id/messages/:messageId', async (c) => {
   });
 });
 
-// DELETE /api/v1/mailboxes/:id/messages/:messageId - 删除邮件
+// DELETE /v1/mail/:id/messages/:messageId - 删除邮件
 mailboxesRouter.delete('/:id/messages/:messageId', async (c) => {
   const db = getD1DB(c.env.DB);
   const apiKey = c.get('apiKey') as { id: string; rateLimit: number };

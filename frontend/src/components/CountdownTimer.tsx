@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'; // fix: 导入 useCallback
 import { useTranslation } from 'react-i18next';
-import ClockIcon from './icons/Clock'; // 导入时钟图标
-import RefreshIcon from './icons/RefreshIcon'; // 导入刷新图标
+import { ClockIcon, RefreshIcon } from "./icons";
 
 // 定义组件的 props 类型
 interface CountdownTimerProps {
@@ -75,25 +74,24 @@ export function CountdownTimer({ expiryTimestamp, onReset }: CountdownTimerProps
 
   return (
     // feat: 将容器改为 flex-row 并添加按钮
-    <div className="flex items-center justify-between gap-2 text-sm text-cyan-400 my-4 p-3 bg-white/5 rounded-md border border-cyan-50/20 shadow-inner">
-      <div className="flex items-center gap-2"> {/* 将图标和文本包裹起来 */}
+    <div className="flex items-center justify-between gap-2 text-sm my-4 p-3 rounded-md border shadow-inner text-amber-700 dark:text-cyan-400 bg-amber-50 dark:bg-white/5 border-amber-200 dark:border-cyan-50/20">
+      <div className="flex items-center gap-2">
         <ClockIcon className="w-5 h-5" />
         {timeLeft.expired ? (
-          <span>{t('Email expired')}</span> // 邮箱已过期提示
+          <span>{t('Email expired')}</span>
         ) : (
           <span>
             {t('Expires in')}: {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
-          </span> // 显示剩余时间 时:分:秒
+          </span>
         )}
       </div>
-      {/* feat: 添加重置有效期按钮, 仅在未过期时显示 */}
       {!timeLeft.expired && (
         <button
-          onClick={onReset} // 修改：调用 onReset 回调
-          className="p-1 rounded text-cyan-400 hover:text-cyan-300 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-          title={t('Reset validity')} // 修改：更新 tooltip 提示文字
+          onClick={onReset}
+          className="p-1 rounded text-amber-600 hover:text-amber-500 dark:text-cyan-400 dark:hover:text-cyan-300 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+          title={t('Reset validity')}
         >
-          <RefreshIcon className="w-5 h-5" /> {/* 使用刷新图标 */}
+          <RefreshIcon className="w-5 h-5" />
         </button>
       )}
     </div>

@@ -5,7 +5,7 @@ export function Privacy() {
     <div>
       <div className="max-w-[1400px] ">
         <p className="mt-8">
-          At Vmail.DEV, we value the privacy of our users and are committed to
+          At TempMail, we value the privacy of our users and are committed to
           protecting their personal information. This Privacy Policy outlines
           the practices we follow regarding the collection, use, storage, and
           deletion of data on our one-time email website.

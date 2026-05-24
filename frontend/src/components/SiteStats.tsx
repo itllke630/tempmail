@@ -1,23 +1,20 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getSiteStats, type SiteStats as SiteStatsType } from "../services/api";
-import MailIcon from "./icons/MailIcon";
-import UserCircleIcon from "./icons/UserCircleIcon";
-import ApiIcon from "./icons/ApiIcon";
-import ServerIcon from "./icons/ServerIcon";
+import { MailIcon, UserCircleIcon, ApiIcon, ServerIcon } from "./icons";
 
-// vmail.dev 域名的历史数据基础值
-const VMAIL_DEV_BASE_STATS = {
+// tempmail.dev 域名的历史数据基础值
+const TEMPMAIL_DEV_BASE_STATS = {
   totalAddressesCreated: 56023,
   totalEmailsReceived: 1342678,
   totalApiKeysCreated: 1840,
   totalApiCalls: 15734,
 };
 
-// 检查是否是 vmail.dev 域名
-function isVmailDev(): boolean {
+// 检查是否是 tempmail.dev 域名
+function isTempMailDev(): boolean {
   return (
-    typeof window !== "undefined" && window.location.hostname === "vmail.dev"
+    typeof window !== "undefined" && window.location.hostname === "tempmail.dev"
   );
 }
 
@@ -35,18 +32,18 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, color }: StatCardProps) {
   return (
-    <div className="flex flex-col items-center p-4 rounded-lg bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600 transition-colors">
+    <div className="flex flex-col items-center p-4 rounded-lg bg-white dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700/50 hover:border-gray-300 dark:hover:border-zinc-600 transition-colors">
       <div className={`p-2 rounded-full mb-2 ${color}`}>{icon}</div>
-      <span className="text-2xl font-bold text-white mb-1">
+      <span className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
         {formatNumber(value)}
       </span>
-      <span className="text-xs text-zinc-400 text-center">{label}</span>
+      <span className="text-xs text-gray-500 dark:text-zinc-400 text-center">{label}</span>
     </div>
   );
 }
 
 function mergeWithBase(stats: SiteStatsType): SiteStatsType {
-  if (!isVmailDev()) {
+  if (!isTempMailDev()) {
     return stats;
   }
 
@@ -54,15 +51,15 @@ function mergeWithBase(stats: SiteStatsType): SiteStatsType {
     totals: {
       totalAddressesCreated:
         stats.totals.totalAddressesCreated +
-        VMAIL_DEV_BASE_STATS.totalAddressesCreated,
+        TEMPMAIL_DEV_BASE_STATS.totalAddressesCreated,
       totalEmailsReceived:
         stats.totals.totalEmailsReceived +
-        VMAIL_DEV_BASE_STATS.totalEmailsReceived,
+        TEMPMAIL_DEV_BASE_STATS.totalEmailsReceived,
       totalApiKeysCreated:
         stats.totals.totalApiKeysCreated +
-        VMAIL_DEV_BASE_STATS.totalApiKeysCreated,
+        TEMPMAIL_DEV_BASE_STATS.totalApiKeysCreated,
       totalApiCalls:
-        stats.totals.totalApiCalls + VMAIL_DEV_BASE_STATS.totalApiCalls,
+        stats.totals.totalApiCalls + TEMPMAIL_DEV_BASE_STATS.totalApiCalls,
     },
   };
 }
@@ -92,7 +89,7 @@ export function SiteStats() {
       <div className="w-full flex flex-col items-center py-4 px-2">
         <div className="animate-pulse grid grid-cols-2 gap-3 w-full max-w-sm">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-zinc-700/50 rounded-lg"></div>
+            <div key={i} className="h-24 bg-gray-200 dark:bg-zinc-700/50 rounded-lg"></div>
           ))}
         </div>
       </div>
@@ -131,7 +128,7 @@ export function SiteStats() {
           color="bg-orange-500/10"
         />
       </div>
-      <p className="text-zinc-500 text-xs mt-4 text-center">
+      <p className="text-gray-400 dark:text-zinc-500 text-xs mt-4 text-center">
         {t("Please create a temporary email address first")}
       </p>
     </div>

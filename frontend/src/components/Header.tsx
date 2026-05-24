@@ -1,14 +1,13 @@
 import { Link } from "react-router-dom";
-import { VmailLogo } from "./icons/vmail.tsx";
+import { VmailLogo, GitHubPlat, ChevronDown, Sun, Moon } from "./icons";
 import { useTranslation } from "react-i18next";
-import GithubPlat from "./icons/GitHubPlat.tsx";
 import { useState, useRef, useEffect } from "react";
-import { InfoModal } from "./InfoModal.tsx";
-import { About } from "../pages/About.tsx";
-import { Privacy } from "../pages/Privacy.tsx";
-import { Terms } from "../pages/Terms.tsx";
+import { InfoModal } from "./InfoModal";
+import { About } from "../pages/About";
+import { Privacy } from "../pages/Privacy";
+import { Terms } from "../pages/Terms";
+import { useTheme } from "../hooks/useTheme";
 
-// 支持的语言列表
 const languages = [
   { code: "zh", name: "简体中文", flag: "🇨🇳" },
   { code: "en", name: "English", flag: "🇺🇸" },
@@ -25,100 +24,83 @@ const languages = [
 
 export function Header() {
   const { t, i18n } = useTranslation();
+  const { theme, toggleTheme } = useTheme();
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
 
-  // 获取当前语言信息（处理可能的语言代码变体，如 zh-CN -> zh）
-  const getCurrentLang = () => {
-    const lang = i18n.language;
-    // 精确匹配
-    const exact = languages.find((l) => l.code === lang);
-    if (exact) return exact;
-    // 前缀匹配（如 zh-CN 匹配 zh，但 zh-TW 优先精确匹配）
-    const prefix = languages.find((l) => lang.startsWith(l.code + "-") || l.code.startsWith(lang + "-"));
-    if (prefix) return prefix;
-    // 基础语言匹配（如 zh-CN -> zh）
-    const baseLang = lang.split("-")[0];
-    const base = languages.find((l) => l.code === baseLang);
-    return base || languages[0];
-  };
-  const currentLang = getCurrentLang();
+  const currentLang = languages.find((l) => {
+    if (l.code === i18n.language) return true;
+    if (l.code === i18n.language.split("-")[0]) return true;
+    return false;
+  }) || languages[0];
 
-  // 切换语言
-  const handleLanguageChange = (langCode: string) => {
-    i18n.changeLanguage(langCode);
-    setShowLangDropdown(false);
-  };
-
-  // 点击外部关闭下拉菜单
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+    const handler = (e: MouseEvent) => {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(e.target as Node)) {
         setShowLangDropdown(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   return (
     <>
-      <header className="fixed top-0 z-20 h-20 w-full px-5 backdrop-blur-xl md:px-10 text-white flex items-center justify-between shadow-sm">
-        <Link
-          to="/"
-          className="font-bold flex items-center justify-center gap-3">
+      <header className="fixed top-0 z-20 h-16 w-full px-5 backdrop-blur-xl md:px-10 text-gray-700 dark:text-white flex items-center justify-between border-b border-gray-200/50 dark:border-zinc-800/50 transition-colors">
+        <Link to="/" className="font-bold flex items-center justify-center gap-2">
           <VmailLogo />
-          <button className="cool-btn">
-            <span>VMAIL.DEV</span>
-          </button>
+          <span className="text-lg font-bold tracking-tight">TEMPMAIL</span>
         </Link>
         <nav className="flex items-center">
-          {/* 导航链接 */}
           <a
-            className="ml-3 md:ml-8"
+            className="ml-3 md:ml-6 text-sm font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
             target="_blank"
             rel="noopener noreferrer"
-            href="/api-docs">
+            href="/api-docs"
+          >
             API
           </a>
           <button
             onClick={() => setShowAboutModal(true)}
-            className="ml-3 md:ml-8 text-sm md:text-base hidden md:block hover:text-cyan-400">
+            className="ml-3 md:ml-6 text-sm font-medium hidden md:block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+          >
             {t("About")}
           </button>
           <button
             onClick={() => setShowPrivacyModal(true)}
-            className="ml-3 md:ml-8 text-sm md:text-base hidden md:block hover:text-cyan-400">
+            className="ml-3 md:ml-6 text-sm font-medium hidden md:block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+          >
             {t("Privacy")}
           </button>
           <button
             onClick={() => setShowTermsModal(true)}
-            className="ml-3 md:ml-8 text-sm md:text-base hidden md:block hover:text-cyan-400">
+            className="ml-3 md:ml-6 text-sm font-medium hidden md:block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+          >
             {t("Terms")}
           </button>
-          {/* 语言切换下拉菜单 */}
-          <div className="relative ml-3 md:ml-8" ref={langDropdownRef}>
+
+          <div className="relative ml-3 md:ml-6" ref={langDropdownRef}>
             <button
               onClick={() => setShowLangDropdown(!showLangDropdown)}
-              className="flex items-center gap-1 text-sm hover:text-cyan-400 px-2 py-1 rounded border border-transparent hover:border-cyan-400/30">
+              className="flex items-center gap-1 text-sm hover:text-cyan-600 dark:hover:text-cyan-400 px-2 py-1.5 rounded-lg transition-colors"
+            >
               <span>{currentLang.flag}</span>
               <span className="hidden md:inline">{currentLang.name}</span>
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDown className="w-3 h-3" />
             </button>
             {showLangDropdown && (
-              <div className="absolute right-0 mt-2 w-40 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg py-1 z-50">
+              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg py-1 z-50">
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
-                    onClick={() => handleLanguageChange(lang.code)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 flex items-center gap-2 ${
-                      lang.code === i18n.language ? "text-cyan-400" : "text-white"
-                    }`}>
+                    onClick={() => { i18n.changeLanguage(lang.code); setShowLangDropdown(false); }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-700 flex items-center gap-2 ${
+                      currentLang.code === lang.code ? "text-cyan-600 dark:text-cyan-400 font-medium" : "text-gray-700 dark:text-white"
+                    }`}
+                  >
                     <span>{lang.flag}</span>
                     <span>{lang.name}</span>
                   </button>
@@ -126,36 +108,36 @@ export function Header() {
               </div>
             )}
           </div>
-          {/* GitHub 链接按钮 */}
+
+          <button
+            onClick={toggleTheme}
+            className="ml-3 md:ml-6 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
           <a
-            className="ml-3 md:ml-8"
+            className="ml-3 md:ml-6"
             target="_blank"
             rel="noopener noreferrer"
-            href="https://github.com/oiov/vmail">
-            <button className="whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-transparent hover:bg-accent hover:text-accent-foreground text-md flex h-[32px] w-[85px] cursor-pointer items-center justify-center rounded-md border-2 p-2 font-semibold hover:opacity-50">
-              <GithubPlat />
-              <div className="ml-1.5 text-sm">Star</div>
+            href="https://github.com/oiov/vmail"
+          >
+            <button className="flex h-8 items-center gap-1.5 rounded-lg border border-gray-300 dark:border-zinc-600 px-3 text-xs font-medium text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
+              <GitHubPlat />
+              <span>Star</span>
             </button>
           </a>
         </nav>
       </header>
 
-      <InfoModal
-        showModal={showAboutModal}
-        setShowModal={setShowAboutModal}
-        title={t("About")}>
+      <InfoModal showModal={showAboutModal} setShowModal={setShowAboutModal} title={t("About")}>
         <About />
       </InfoModal>
-      <InfoModal
-        showModal={showPrivacyModal}
-        setShowModal={setShowPrivacyModal}
-        title={t("Privacy")}>
+      <InfoModal showModal={showPrivacyModal} setShowModal={setShowPrivacyModal} title={t("Privacy")}>
         <Privacy />
       </InfoModal>
-      <InfoModal
-        showModal={showTermsModal}
-        setShowModal={setShowTermsModal}
-        title={t("Terms")}>
+      <InfoModal showModal={showTermsModal} setShowModal={setShowTermsModal} title={t("Terms")}>
         <Terms />
       </InfoModal>
     </>

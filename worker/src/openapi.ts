@@ -13,7 +13,7 @@ export function createOpenApiDisabledResponse(): Response {
     JSON.stringify({
       error: {
         code: 'OPENAPI_DISABLED',
-        message: 'OpenAPI access is disabled by the site administrator. Please self-host Vmail if you need API access.',
+        message: 'OpenAPI access is disabled by the site administrator. Please self-host TempMail if you need API access.',
       },
     }),
     {

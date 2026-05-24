@@ -36,6 +36,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 // 配置 CORS
 app.use('/api/*', cors());
+app.use('/v1/*', cors());
 
 const SITE_AUTH_COOKIE = 'vmail_site_auth';
 
@@ -82,7 +83,7 @@ function shouldBypassSiteGate(pathname: string): boolean {
   if (pathname === '/' || pathname === '/index.html') {
     return true;
   }
-  if (pathname.startsWith('/api/') || pathname === '/config') {
+  if (pathname.startsWith('/api/') || pathname.startsWith('/v1/') || pathname === '/config') {
     return true;
   }
   if (pathname === '/auth/unlock' || pathname === '/auth/logout' || pathname === '/auth/status') {
@@ -179,7 +180,7 @@ api.post('/verify', turnstile, async (c) => {
 // 生成 API Key 的函数
 function generateApiKey(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let key = 'vmail_';
+  let key = 'TempMail_';
   for (let i = 0; i < 32; i++) {
     key += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -427,7 +428,64 @@ app.post('/auth/logout', (c) => {
   return c.json({ success: true });
 });
 
+// 管理员生成 API Key（站点密码验证，不需要 Turnstile）
+app.post('/api/admin/generate-key', async (c) => {
+  if (!c.env.PASSWORD) {
+    return c.json({ error: { code: 'DISABLED', message: 'Admin key generation is not enabled' } }, 403);
+  }
+
+  let body: { password?: string; name?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'Invalid request body' } }, 400);
+  }
+
+  if (!body.password || body.password !== c.env.PASSWORD) {
+    return c.json({ error: { code: 'UNAUTHORIZED', message: 'Invalid admin password' } }, 401);
+  }
+
+  const db = getD1DB(c.env.DB);
+  const now = new Date();
+  const apiKey = generateApiKey();
+  const keyPrefix = apiKey.substring(0, 12) + '...';
+
+  const newApiKey = {
+    id: nanoid(),
+    key: apiKey,
+    keyPrefix,
+    name: body.name || 'admin-generated',
+    rateLimit: 100,
+    isActive: true,
+    lastUsedAt: null,
+    expiresAt: null,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  try {
+    await insertApiKey(db, newApiKey);
+    await incrementApiKeysCreated(db);
+    await incrementDailyApiKeysCreated(db);
+    return c.json({
+      data: {
+        id: newApiKey.id,
+        key: apiKey,
+        keyPrefix,
+        name: newApiKey.name,
+        createdAt: now.toISOString(),
+      },
+      message: 'API Key created successfully. Save it now!',
+    }, 201);
+  } catch (e: any) {
+    console.error('Admin generate API Key error:', e);
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create API Key' } }, 500);
+  }
+});
+
 // 挂载 v1 API 路由
+app.route('/v1', v1Api);
+// 保留旧路径以兼容已有调用
 app.route('/api/v1', v1Api);
 
 // 修正: 确保 serveStatic 正确指向静态文件目录
@@ -504,7 +562,7 @@ export default {
     }
 
     // API 路由
-    if (url.pathname.startsWith('/api/') || url.pathname === '/config' || url.pathname.startsWith('/auth/')) {
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/v1/') || url.pathname === '/config' || url.pathname.startsWith('/auth/')) {
       return app.fetch(request, env, ctx);
     }
 

@@ -1,19 +1,21 @@
 <div align="center">
-  <h1>𝐕𝐌𝐀𝐈𝐋.𝐃𝐄𝐕</h1>
-  <p><a href="https://discord.gg/d68kWCBDEs">Discord</a> · English | <a href="/README.md">简体中文</a></p>
-  <p>Temporary email service build with email worker.</p>
-  </div>
+  <h1>TempMail</h1>
+  <p>Temporary email service built with Cloudflare Email Worker.</p>
+</div>
 
 ## Features
 
 - 🎯 Privacy-friendly, no registration required, out-of-the-box
 - ✈️ Support email sending and receiving
 - ✨ Support saving passwords and retrieving email addresses
-- 😄 Support multiple domain name suffixes
+- 😄 Support multiple domain name suffixes with per-domain TTL
 - 🔌 **Open RESTful API**, support programmatic access
+- 🌓 Light/Dark mode
+- 🌍 12 languages i18n
+- 🔐 OTP verification code extraction
 - 🚀 100% open source, quick deployment, pure Cloudflare solution, no server required
 
-Principles：
+Principles:
 
 - Receiving emails (Cloudflare Email Worker)
 - Display email (Vite + React on Cloudflare Pages)
@@ -22,42 +24,50 @@ Principles：
 
 ## 📖 API Documentation
 
-Vmail provides a complete RESTful API for programmatic access to create temporary mailboxes and query inboxes.
+TempMail provides a complete RESTful API for programmatic access to create temporary mailboxes and query inboxes.
 
 ### Get API Key
 
-Visit the [API Documentation Page](https://vmail.dev/api-docs) to create a free API Key.
+You can generate an API Key via the admin endpoint using the site password:
+
+```bash
+curl -X POST https://your-domain.com/api/admin/generate-key \
+  -H "Content-Type: application/json" \
+  -d '{"password": "your-admin-password", "name": "my-key"}'
+```
+
+> Note: The admin endpoint requires the `PASSWORD` environment variable to be set.
 
 ### API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/v1/mailboxes` | Create temporary mailbox |
-| `GET` | `/api/v1/mailboxes/:id` | Get mailbox information |
-| `GET` | `/api/v1/mailboxes/:id/messages` | Get inbox (with pagination) |
-| `GET` | `/api/v1/mailboxes/:id/messages/:messageId` | Get message details |
-| `DELETE` | `/api/v1/mailboxes/:id/messages/:messageId` | Delete message |
+| Method   | Endpoint                              | Description              |
+| -------- | ------------------------------------- | ------------------------ |
+| `POST`   | `/v1/mail`                            | Create temporary mailbox |
+| `GET`    | `/v1/mail/:id`                        | Get mailbox information  |
+| `GET`    | `/v1/mail/:id/messages`               | Get inbox (paginated)    |
+| `GET`    | `/v1/mail/:id/messages/:messageId`    | Get message details      |
+| `DELETE` | `/v1/mail/:id/messages/:messageId`    | Delete message           |
+
+> Legacy path `/api/v1/mailboxes` is still supported for backward compatibility.
 
 ### Quick Start
 
 ```bash
 # 1. Create temporary mailbox
-curl -X POST https://vmail.dev/api/v1/mailboxes \
+curl -X POST https://your-domain.com/v1/mail \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json"
 
 # Response: { "data": { "id": "abc123", "address": "random@domain.com", ... } }
 
 # 2. Query inbox
-curl https://vmail.dev/api/v1/mailboxes/abc123/messages \
+curl https://your-domain.com/v1/mail/abc123/messages \
   -H "X-API-Key: your-api-key"
 
 # 3. Get message details
-curl https://vmail.dev/api/v1/mailboxes/abc123/messages/msg_001 \
+curl https://your-domain.com/v1/mail/abc123/messages/msg_001 \
   -H "X-API-Key: your-api-key"
 ```
-
-Full documentation: [https://vmail.dev/api-docs](https://vmail.dev/api-docs)
 
 ## Self-hosted Tutorial
 
@@ -70,18 +80,11 @@ This project is now fully based on Cloudflare Pages and Cloudflare D1, which gre
 
 ### Automatic Deployment (Recommended)
 
-This project includes a pre-configured GitHub Action workflow to help you automatically deploy the Vmail application to Cloudflare.
+This project includes a pre-configured GitHub Action workflow to help you automatically deploy the TempMail application to Cloudflare.
 
 For detailed steps, please refer to the [GitHub Action Auto-Deployment Tutorial](/docs/github-action-tutorial.md).
 
 ### Manual Deployment Steps
-
-1.  **Clone the project locally**
-    ```bash
-    git clone https://github.com/oiov/vmail
-    cd vmail
-    pnpm install
-    ```
 
 2.  **Create a Cloudflare D1 Database**
     Create a D1 database in the Cloudflare dashboard or using the Wrangler CLI.
@@ -93,7 +96,7 @@ For detailed steps, please refer to the [GitHub Action Auto-Deployment Tutorial]
     ```bash
     # Build the frontend application
     pnpm run build
-    
+
     # Deploy to Cloudflare
     pnpm run deploy
     ```
@@ -119,7 +122,6 @@ For detailed steps, please refer to the [GitHub Action Auto-Deployment Tutorial]
     ```
     This command starts both the frontend Vite development server and the local Wrangler Worker environment at the same time.
 
-
 ### Environment Variables
 
 When deploying to Cloudflare Pages, you need to configure the following environment variables:
@@ -130,10 +132,11 @@ When deploying to Cloudflare Pages, you need to configure the following environm
 -   `EMAIL_DOMAIN`: Your email domain, e.g. `example.com,example.net`.
 -   `TURNSTILE_KEY`: Your Turnstile site key (optional).
 -   `TURNSTILE_SECRET`: Your Turnstile secret key (optional).
--   `PASSWORD`: Site access password (optional).
+-   `PASSWORD`: Site access password (optional, also used for admin API key generation).
 -   `API_RATE_LIMIT_PER_MINUTE`: API rate limit per minute (optional, default 100).
--   `SHOW_AFF`: Show promotional popup and link (optional, `true` to enable, hidden by default).
--   `ENABLE_OPENAPI`: Whether to enable OpenAPI access (optional, enabled by default; set to `false` to disable API key creation and `/api/v1/*` access).
+-   `SHOW_AFF`: Show promotional placements (optional, `true` to enable, hidden by default).
+-   `ENABLE_OPENAPI`: Whether to enable OpenAPI access (optional, enabled by default; set to `false` to disable API key creation and `/v1/*` access).
+-   `DOMAIN_TTL_CONFIG`: Per-domain mail retention time in hours (optional, format: `domain=hours,domain=hours`, e.g. `premium.com=720,free.com=24`).
 
 ## License
 
