@@ -11,7 +11,6 @@ export interface AppConfig {
   apiRateLimitPerMinute: number;
   openApiEnabled: boolean;
   showAff: boolean;
-  adTopHtml: string;
 }
 
 // 创建 React Context

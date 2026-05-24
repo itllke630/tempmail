@@ -369,7 +369,6 @@ app.get('/config', (c) => {
     apiRateLimitPerMinute: parseRateLimitPerMinute(c.env),
     openApiEnabled,
     showAff: c.env.SHOW_AFF === 'true',
-    adTopHtml: c.env.AD_TOP_HTML || '',
   };
   return new Response(JSON.stringify(responseData), {
     headers: {
@@ -377,6 +376,11 @@ app.get('/config', (c) => {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
     },
   });
+});
+
+// 广告 HTML 接口（前端专用，非敏感）
+api.get('/ad-top', async (c) => {
+  return c.json({ html: c.env.AD_TOP_HTML || '' });
 });
 
 // 站点统计数据接口（公开）
