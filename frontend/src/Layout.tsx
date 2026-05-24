@@ -7,36 +7,48 @@ import { Toaster } from "react-hot-toast";
 import { useTheme } from "./hooks/useTheme";
 
 function AdTop({ html }: { html: string }) {
-  const ref = useRef<HTMLIFrameElement>(null);
-  const htmlRef = useRef(html);
-  htmlRef.current = html;
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const iframe = ref.current;
-    if (!iframe) return;
+    if (!ref.current || !html) return;
+    const el = ref.current;
+    el.innerHTML = "";
 
-    const onLoad = () => {
-      const doc = iframe.contentDocument;
-      if (!doc || !htmlRef.current) return;
-      doc.open();
-      doc.write(htmlRef.current);
-      doc.close();
+    const temp = document.createElement("div");
+    temp.innerHTML = html;
+
+    const originalWrite = document.write.bind(document);
+    document.write = function (markup: string) {
+      el.innerHTML += markup;
+    } as typeof document.write;
+
+    while (temp.firstChild) {
+      const node = temp.firstChild;
+      if (node instanceof HTMLScriptElement) {
+        const script = document.createElement("script");
+        Array.from(node.attributes).forEach((a) => script.setAttribute(a.name, a.value));
+        if (node.src) {
+          script.src = node.src;
+          document.body.appendChild(script);
+          script.addEventListener("load", () => script.remove());
+          script.addEventListener("error", () => script.remove());
+        } else {
+          script.textContent = node.textContent;
+          document.body.appendChild(script);
+          script.remove();
+        }
+        node.remove();
+      } else {
+        el.appendChild(node);
+      }
+    }
+
+    return () => {
+      document.write = originalWrite;
     };
+  }, [html]);
 
-    iframe.addEventListener("load", onLoad);
-    return () => iframe.removeEventListener("load", onLoad);
-  }, []);
-
-  return (
-    <div className="w-full flex justify-center pb-4">
-      <iframe
-        ref={ref}
-        title="ad"
-        style={{ width: "728px", height: "90px", border: "none" }}
-        scrolling="no"
-      />
-    </div>
-  );
+  return <div ref={ref} className="w-full flex justify-center pb-4" />;
 }
 
 export function Layout() {
