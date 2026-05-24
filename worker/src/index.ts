@@ -580,26 +580,23 @@ export default {
       return app.fetch(request, env, ctx);
     }
 
-    // 静态资源请求
-    let response = await env.ASSETS.fetch(request);
-
-    // SPA 路由回退：如果静态资源返回 404，则返回 index.html
-    if (response.status === 404) {
-      const indexRequest = new Request(new URL('/', request.url).toString(), request);
-      response = env.ASSETS.fetch(indexRequest);
+    // 静态资源（JS / CSS / 图片等）直接返回
+    if (url.pathname.startsWith("/assets/") || /\.[a-z0-9]+$/i.test(url.pathname)) {
+      return env.ASSETS.fetch(request);
     }
 
-    // 服务端注入顶部广告到 HTML（确保脚本在页面解析阶段执行）
+    // HTML 页面请求：始终获取全新的 index.html 并注入广告
+    const indexRequest = new Request(new URL("/", request.url).toString());
+    const response = await env.ASSETS.fetch(indexRequest);
+
     if (env.AD_TOP_HTML) {
-      const ct = response.headers.get("Content-Type") || "";
-      if (ct.includes("text/html")) {
-        const html = await response.text();
-        const wrapper = `<div style="display:flex;justify-content:center;padding-top:64px;padding-bottom:16px">${env.AD_TOP_HTML}</div>`;
-        const injected = html.replace("<body>", `<body>${wrapper}`);
-        const headers = new Headers(response.headers);
-        headers.set("Cache-Control", "no-store");
-        return new Response(injected, { status: response.status, headers });
-      }
+      const html = await response.text();
+      const wrapper = `<div style="display:flex;justify-content:center;padding-top:64px;padding-bottom:16px">${env.AD_TOP_HTML}</div>`;
+      const injected = html.replace("<body>", `<body>${wrapper}`);
+      return new Response(injected, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+      });
     }
 
     return response;
