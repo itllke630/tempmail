@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react';
 // 定义配置的类型
 export interface AppConfig {
   emailDomain: string[];
+  teamDomains: string[];
   domainTtlConfig: Record<string, number>;
   turnstileKey: string;
   turnstileEnabled: boolean;

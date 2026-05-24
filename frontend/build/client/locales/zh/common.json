@@ -10,6 +10,7 @@
   "API requests are rate limited based on your API Key configuration. Default limit is 100 requests per minute.": "API 请求根据您的 API Key 配置进行速率限制，默认限制为每分钟100次请求。",
   "About": "关于",
   "Addresses Created": "累计创建邮址",
+  "All rights reserved to TempMail": "2024-2026 解释权归TempMail",
   "All API requests require an API Key. Include it in the request header:": "所有 API 请求都需要 API Key，请在请求头中包含：",
   "All errors follow a consistent format:": "所有错误遵循统一格式：",
   "Authentication": "认证",

@@ -2,7 +2,6 @@ import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Shuffle, Send } from "lucide-react";
 import { RefreshCw, ChevronDown } from "../icons";
-import { CopyButton } from "../CopyButton";
 import type { AppConfig } from "../../hooks/useConfig";
 
 function generateRandomLocalPart(): string {
@@ -31,19 +30,18 @@ interface EmailControlsProps {
   onToggleTelegram: () => void;
   onTeamLoginClick: () => void;
   onTeamLogout: () => void;
-  onShowPassword: () => void;
 }
 
 export function EmailControls({
   localPart, domain, config, teamDomains, isTeamMode,
   fullAddress, isFetching, telegramEnabled,
   onLocalPartChange, onDomainChange, onRandom, onRefresh,
-  onToggleTelegram, onTeamLoginClick, onTeamLogout, onShowPassword,
+  onToggleTelegram, onTeamLoginClick, onTeamLogout,
 }: EmailControlsProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const publicDomains = config.emailDomain;
-  const ttlHours = config.domainTtlConfig?.[domain] ?? 24;
+  const allTeamDomains = [...new Set([...config.teamDomains, ...teamDomains])];
 
   return (
     <div className="space-y-4">
@@ -67,9 +65,9 @@ export function EmailControls({
             {publicDomains.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
-            {isTeamMode && teamDomains.length > 0 && (
+            {isTeamMode && allTeamDomains.length > 0 && (
               <optgroup label="Team">
-                {teamDomains.map((d) => (
+                {allTeamDomains.map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </optgroup>
@@ -108,15 +106,7 @@ export function EmailControls({
         </button>
       </div>
 
-      {/* Retention info */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/40 dark:border-amber-800/30">
-        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 dark:bg-amber-500 shrink-0" />
-        <span className="text-xs text-amber-700 dark:text-amber-400">
-          {t("Email retention")}: {ttlHours}h{isTeamMode && ` (${Math.round(ttlHours / 24)}d)`}
-        </span>
-      </div>
-
-      {/* Team + Password + Telegram */}
+      {/* Team + Telegram */}
       <div className="space-y-2 pt-1 border-t border-zinc-100 dark:border-zinc-800">
         {!isTeamMode ? (
           <button
@@ -133,12 +123,6 @@ export function EmailControls({
             {t("Team Logout")}
           </button>
         )}
-        <button
-          onClick={onShowPassword}
-          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200/60 dark:border-zinc-700/50 hover:bg-zinc-100 dark:hover:bg-white/10 text-xs font-medium text-zinc-500 dark:text-zinc-400 transition-all"
-        >
-          {t("View password")}
-        </button>
         <div className="flex items-center justify-between px-1 py-1">
           <div className="flex items-center gap-2">
             <Send className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />

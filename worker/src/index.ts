@@ -30,6 +30,7 @@ export interface Env {
   SHOW_AFF?: string;
   ENABLE_OPENAPI?: string;
   TELEGRAM_BOT_TOKEN?: string;
+  TEAM_DOMAINS?: string;
 }
 
 // 初始化 Hono 应用
@@ -327,12 +328,15 @@ api.post('/login', async (c) => {
 app.get('/config', (c) => {
   // feat: 将 emailDomain 拆分为数组以支持多域名
   const emailDomain = c.env.EMAIL_DOMAIN ? c.env.EMAIL_DOMAIN.split(',').map(d => d.trim()) : [];
+  const teamDomains = c.env.TEAM_DOMAINS ? c.env.TEAM_DOMAINS.split(',').map(d => d.trim()) : [];
+  const publicDomains = emailDomain.filter(d => !teamDomains.includes(d));
   const turnstileEnabled = isTurnstileEnabled(c.env);
   const openApiEnabled = isOpenApiEnabled(c.env);
 
   return c.json({
-    emailDomain: emailDomain,
+    emailDomain: publicDomains,
     domainTtlConfig: Object.fromEntries(parseDomainTtlConfig(c.env)),
+    teamDomains,
     turnstileKey: c.env.TURNSTILE_KEY,
     turnstileEnabled,
     cookiesSecret: c.env.COOKIES_SECRET,

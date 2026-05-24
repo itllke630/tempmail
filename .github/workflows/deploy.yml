@@ -101,6 +101,11 @@ jobs:
           else
             sed -i '/^TELEGRAM_BOT_TOKEN = /d' wrangler.toml
           fi
+          if [ -n "${TEAM_DOMAINS}" ]; then
+            sed -i "s#\${TEAM_DOMAINS}#${TEAM_DOMAINS}#g" wrangler.toml
+          else
+            sed -i '/^TEAM_DOMAINS = /d' wrangler.toml
+          fi
         env:
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
           D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
@@ -114,6 +119,7 @@ jobs:
           ENABLE_OPENAPI: ${{ secrets.ENABLE_OPENAPI }}
           DOMAIN_TTL_CONFIG: ${{ secrets.DOMAIN_TTL_CONFIG }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TEAM_DOMAINS: ${{ secrets.TEAM_DOMAINS }}
       
       # 新增：在部署前应用 D1 数据库迁移
       # 这一步会明确地告诉 Wrangler 远程执行 D1 数据库的迁移脚本。

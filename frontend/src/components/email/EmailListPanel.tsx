@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Inbox, RefreshCw, Lock } from "../icons";
+import { Inbox, RefreshCw } from "../icons";
 import { SkeletonLoader } from "./SkeletonLoader";
 import { EmptyState } from "./EmptyState";
 import { EmailListItem } from "./EmailListItem";
@@ -21,7 +21,6 @@ interface EmailListPanelProps {
   onExpand: () => void;
   onDelete: (ids: string[]) => void;
   onRefresh: () => void;
-  onShowPassword: () => void;
   getOtpsForEmail: (email: Email) => OtpMatch[];
   lastViewedAt: number | null;
 }
@@ -29,7 +28,7 @@ interface EmailListPanelProps {
 export function EmailListPanel({
   emails, isLoading, isFetching, isDeleting,
   selectedIds, setSelectedIds, selectedEmail, onSelectEmail,
-  onCloseDetail, onExpand, onDelete, onRefresh, onShowPassword,
+  onCloseDetail, onExpand, onDelete, onRefresh,
   getOtpsForEmail, lastViewedAt,
 }: EmailListPanelProps) {
   const { t } = useTranslation();
@@ -103,9 +102,6 @@ export function EmailListPanel({
             )}
             <button onClick={onRefresh} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-all">
               <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""} text-gray-400 dark:text-zinc-500`} />
-            </button>
-            <button onClick={onShowPassword} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-all">
-              <Lock className="w-4 h-4 text-gray-400 dark:text-zinc-500" />
             </button>
           </div>
         </div>

@@ -10,6 +10,7 @@
   "API requests are rate limited based on your API Key configuration. Default limit is 100 requests per minute.": "API requests are rate limited based on your API Key configuration. Default limit is 100 requests per minute.",
   "About": "About",
   "Addresses Created": "Addresses Created",
+  "All rights reserved to TempMail": "© 2024-2026 All rights reserved to TempMail",
   "All API requests require an API Key. Include it in the request header:": "All API requests require an API Key. Include it in the request header:",
   "All errors follow a consistent format:": "All errors follow a consistent format:",
   "Authentication": "Authentication",

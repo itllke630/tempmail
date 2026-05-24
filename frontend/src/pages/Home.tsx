@@ -4,19 +4,15 @@ import { useTranslation } from "react-i18next";
 import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
 
-import { getEmails, getMailboxMeta, deleteEmails, verifyTurnstile, loginByPassword } from "../services/api";
+import { getEmails, getMailboxMeta, deleteEmails, verifyTurnstile } from "../services/api";
 import { useConfig } from "../hooks/useConfig";
 import { useTeamAuth } from "../hooks/useTeamAuth";
-import { usePasswordModal } from "../components/password";
-import { encrypt } from "../lib/utlis";
 import { extractOtpsFromEmail } from "../lib/otp";
 import { EmailControls, generateRandomLocalPart } from "../components/controls/EmailControls";
 import { EmailListPanel } from "../components/email/EmailListPanel";
 import { TeamLoginModal } from "../components/modals/TeamLoginModal";
 import { AdSlot } from "../components/ads/AdSlot";
 import { SeoMarketing } from "../components/SeoMarketing";
-import { PasswordIcon, Close } from "../components/icons";
-import { CopyButton } from "../components/CopyButton";
 import type { Email } from "../database_types";
 
 const TG_KEY = "vmail_telegram_enabled";
@@ -34,8 +30,9 @@ export function Home() {
   });
 
   const getInitialDomain = () => {
-    if (teamAuth.isAuthenticated && teamAuth.teamDomains.length > 0) {
-      return teamAuth.teamDomains[0];
+    if (teamAuth.isAuthenticated) {
+      const allTeamDomains = [...new Set([...config.teamDomains, ...teamAuth.teamDomains])];
+      if (allTeamDomains.length > 0) return allTeamDomains[0];
     }
     return config.emailDomain[0];
   };
@@ -55,9 +52,6 @@ export function Home() {
   const [telegramEnabled, setTelegramEnabled] = useState(() => {
     try { return localStorage.getItem(TG_KEY) === "true"; } catch { return false; }
   });
-
-  const { PasswordModal, setShowPasswordModal } = usePasswordModal();
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const ttlHours = config.domainTtlConfig?.[selectedDomain] ?? 24;
 
@@ -106,8 +100,9 @@ export function Home() {
 
   // Update team domain default
   useEffect(() => {
-    if (teamAuth.isAuthenticated && teamAuth.teamDomains.length > 0) {
-      setSelectedDomain(teamAuth.teamDomains[0]);
+    if (teamAuth.isAuthenticated) {
+      const allTeamDomains = [...new Set([...config.teamDomains, ...teamAuth.teamDomains])];
+      if (allTeamDomains.length > 0) setSelectedDomain(allTeamDomains[0]);
     }
   }, [teamAuth.isAuthenticated]);
 
@@ -139,7 +134,6 @@ export function Home() {
     if (!address) {
       setHasReceivedEmail(false);
       setExpiryTimestamp(undefined);
-      toast.dismiss("password-notification");
     }
   }, [emails, address, hasReceivedEmail]);
 
@@ -208,66 +202,10 @@ export function Home() {
     deleteMutation.mutate(ids);
   };
 
-  const handleLogin = async (password: string) => {
-    setIsLoggingIn(true);
-    try {
-      const data = await loginByPassword(password);
-      const domain = data.address.split("@")[1];
-      const now = Date.now();
-      const expires = now + ttlHours * 60 * 60 * 1000;
-      Cookies.set("userMailbox", data.address, { expires: 1 });
-      Cookies.set("emailExpiry", expires.toString(), { expires: 1 });
-      setLocalPart(data.address.split("@")[0]);
-      setSelectedDomain(domain);
-      setAddress(data.address);
-      setExpiryTimestamp(expires);
-      setShowPasswordModal(false);
-      toast.success(t("Login successful"));
-    } catch (error: any) {
-      toast.error(`${t("Login failed")}: ${t(error.message)}`);
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  const getPassword = useCallback(() => {
-    if (address && config.cookiesSecret) return encrypt(address, config.cookiesSecret);
-    return null;
-  }, [address, config.cookiesSecret]);
-
-  const showPasswordToast = useCallback((password: string) => {
-    toast((instance) => (
-      <div className="w-full max-w-lg p-4 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-2xl shadow-lg border border-zinc-200 dark:border-zinc-700">
-        <div className="flex items-center justify-between pb-2 mb-3 border-b border-zinc-200 dark:border-zinc-700">
-          <div className="flex items-center gap-2">
-            <PasswordIcon className="h-5 w-5 text-cyan-500" />
-            <h3 className="text-base font-semibold">{t("View password")}</h3>
-          </div>
-          <button onClick={() => toast.dismiss(instance.id)} className="p-1 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-white">
-            <Close className="h-4 w-4" />
-          </button>
-        </div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("Save your password and continue using this email in 1 day")}</p>
-        <div className="mt-2 flex items-center text-sm bg-zinc-100 dark:bg-zinc-700 px-2 py-1 rounded-lg">
-          <span className="flex-1 font-mono break-all">{password}</span>
-          <CopyButton text={password} className="p-1" />
-        </div>
-        <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">{t("Remember your password, otherwise your email will expire and cannot be retrieved")}</p>
-      </div>
-    ), { id: "password-notification", duration: 5000, position: "top-center", style: { background: "transparent", border: "none", padding: 0, boxShadow: "none" } });
-  }, [t]);
-
-  const handleShowPassword = () => {
-    const pw = getPassword();
-    if (pw) showPasswordToast(pw);
-  };
-
   const fullAddress = `${localPart}@${selectedDomain}`;
 
   return (
     <>
-      <PasswordModal onLogin={handleLogin} isLoggingIn={isLoggingIn} />
-
       {/* Main grid: 5-col sidebar + 7-col inbox */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 pb-8">
         <div className="md:grid md:grid-cols-12 md:gap-6">
@@ -291,7 +229,6 @@ export function Home() {
                 onToggleTelegram={handleToggleTelegram}
                 onTeamLoginClick={() => setShowTeamModal(true)}
                 onTeamLogout={teamAuth.logout}
-                onShowPassword={handleShowPassword}
               />
             </div>
 
@@ -314,7 +251,6 @@ export function Home() {
               onExpand={() => {}}
               onDelete={handleDeleteEmails}
               onRefresh={handleRefresh}
-              onShowPassword={handleShowPassword}
               getOtpsForEmail={extractOtpsFromEmail}
               lastViewedAt={null}
             />
