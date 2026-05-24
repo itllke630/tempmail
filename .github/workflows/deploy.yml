@@ -87,7 +87,8 @@ jobs:
                   if line.strip().startswith(var + ' =') and not val:
                       line = None
                       break
-                  line = line.replace('${' + var + '}', val)
+                  esc = val.replace("'''", "''" + "'")
+                  line = line.replace('"${' + var + '}"', "'''" + esc + "'''")
               if line is not None:
                   result.append(line)
           with open('wrangler.toml', 'w') as f:
