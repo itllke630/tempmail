@@ -10,7 +10,7 @@ import { useTeamAuth } from "../hooks/useTeamAuth";
 import { extractOtpsFromEmail } from "../lib/otp";
 import { EmailControls, generateRandomLocalPart } from "../components/controls/EmailControls";
 import { EmailListPanel } from "../components/email/EmailListPanel";
-import { AdSlot } from "../components/ads/AdSlot";
+import { AdFrame } from "../components/ads/AdFrame";
 import { SeoMarketing } from "../components/SeoMarketing";
 import type { Email } from "../database_types";
 
@@ -51,6 +51,8 @@ export function Home() {
     try { return localStorage.getItem(TG_KEY) === "true"; } catch { return false; }
   });
   const [randomLength, setRandomLength] = useState(10);
+  const [leftAd, setLeftAd] = useState("");
+  const [rightAd, setRightAd] = useState("");
 
   const ttlHours = config.domainTtlConfig?.[selectedDomain] ?? 24;
 
@@ -127,6 +129,11 @@ export function Home() {
     };
     create();
   }, [address, turnstileToken]);
+
+  useEffect(() => {
+    fetch("/api/ad-left").then(r => r.json()).then(d => setLeftAd(d.html || "")).catch(() => {});
+    fetch("/api/ad-right").then(r => r.json()).then(d => setRightAd(d.html || "")).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (emails.length > 0 && !hasReceivedEmail) setHasReceivedEmail(true);
@@ -236,8 +243,8 @@ export function Home() {
 
           {/* Left skyscraper ad */}
           <aside className="hidden lg:block lg:col-span-2">
-            <div className="sticky top-20">
-              <AdSlot variant="skyscraper" />
+            <div className="sticky top-20 flex justify-center">
+              <AdFrame html={leftAd} width={160} height={600} />
             </div>
           </aside>
 
@@ -263,8 +270,8 @@ export function Home() {
 
           {/* Right skyscraper ad */}
           <aside className="hidden lg:block lg:col-span-2">
-            <div className="sticky top-20">
-              <AdSlot variant="skyscraper" />
+            <div className="sticky top-20 flex justify-center">
+              <AdFrame html={rightAd} width={160} height={600} />
             </div>
           </aside>
 
