@@ -78,7 +78,7 @@ jobs:
               'COOKIES_SECRET', 'TURNSTILE_KEY', 'TURNSTILE_SECRET',
               'PASSWORD', 'API_RATE_LIMIT_PER_MINUTE', 'SHOW_AFF',
               'ENABLE_OPENAPI', 'DOMAIN_TTL_CONFIG', 'TELEGRAM_BOT_TOKEN',
-              'TEAM_DOMAINS', 'AD_TOP_HTML',
+              'TEAM_DOMAINS', 'AD_TOP_HTML', 'AD_LEFT_HTML', 'AD_RIGHT_HTML',
           ]
           result = []
           for line in lines:
@@ -109,7 +109,9 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TEAM_DOMAINS: ${{ secrets.TEAM_DOMAINS }}
           AD_TOP_HTML: ${{ secrets.AD_TOP_HTML }}
-      
+          AD_LEFT_HTML: ${{ secrets.AD_LEFT_HTML }}
+          AD_RIGHT_HTML: ${{ secrets.AD_RIGHT_HTML }}
+
       # 新增：在部署前应用 D1 数据库迁移
       # 这一步会明确地告诉 Wrangler 远程执行 D1 数据库的迁移脚本。
       - name: Apply D1 Migrations

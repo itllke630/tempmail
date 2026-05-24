@@ -32,6 +32,8 @@ export interface Env {
   TELEGRAM_BOT_TOKEN?: string;
   TEAM_DOMAINS?: string;
   AD_TOP_HTML?: string;
+  AD_LEFT_HTML?: string;
+  AD_RIGHT_HTML?: string;
 }
 
 // 初始化 Hono 应用
@@ -381,6 +383,12 @@ app.get('/config', (c) => {
 // 广告 HTML 接口
 api.get('/ad-top', async (c) => {
   return c.json({ html: c.env.AD_TOP_HTML || '' });
+});
+api.get('/ad-left', async (c) => {
+  return c.json({ html: c.env.AD_LEFT_HTML || '' });
+});
+api.get('/ad-right', async (c) => {
+  return c.json({ html: c.env.AD_RIGHT_HTML || '' });
 });
 
 // 站点统计数据接口（公开）
