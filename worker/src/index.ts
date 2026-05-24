@@ -371,6 +371,7 @@ app.get('/config', (c) => {
     openApiEnabled,
     showAff: c.env.SHOW_AFF === 'true',
     adTopHtml: c.env.AD_TOP_HTML || '',
+    deployVersion: '2',
   });
 });
 
