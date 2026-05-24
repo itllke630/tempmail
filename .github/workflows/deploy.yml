@@ -84,6 +84,11 @@ jobs:
           else
             sed -i '/^SHOW_AFF = /d' wrangler.toml
           fi
+          if [ -n "${ENABLE_OPENAPI}" ]; then
+            sed -i "s#\${ENABLE_OPENAPI}#${ENABLE_OPENAPI}#g" wrangler.toml
+          else
+            sed -i '/^ENABLE_OPENAPI = /d' wrangler.toml
+          fi
           if [ -n "${DOMAIN_TTL_CONFIG}" ]; then
             sed -i "s#\${DOMAIN_TTL_CONFIG}#${DOMAIN_TTL_CONFIG}#g" wrangler.toml
           else
@@ -99,6 +104,7 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
           API_RATE_LIMIT_PER_MINUTE: ${{ secrets.API_RATE_LIMIT_PER_MINUTE }}
           SHOW_AFF: ${{ secrets.SHOW_AFF }}
+          ENABLE_OPENAPI: ${{ secrets.ENABLE_OPENAPI }}
           DOMAIN_TTL_CONFIG: ${{ secrets.DOMAIN_TTL_CONFIG }}
       
       # 新增：在部署前应用 D1 数据库迁移
