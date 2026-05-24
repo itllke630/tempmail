@@ -8,15 +8,24 @@ import { useTheme } from "./hooks/useTheme";
 
 function AdTop({ html }: { html: string }) {
   const ref = useRef<HTMLIFrameElement>(null);
+  const htmlRef = useRef(html);
+  htmlRef.current = html;
 
   useEffect(() => {
-    if (!ref.current || !html) return;
-    const doc = ref.current.contentDocument;
-    if (!doc) return;
-    doc.open();
-    doc.write(html);
-    doc.close();
-  }, [html]);
+    const iframe = ref.current;
+    if (!iframe) return;
+
+    const onLoad = () => {
+      const doc = iframe.contentDocument;
+      if (!doc || !htmlRef.current) return;
+      doc.open();
+      doc.write(htmlRef.current);
+      doc.close();
+    };
+
+    iframe.addEventListener("load", onLoad);
+    return () => iframe.removeEventListener("load", onLoad);
+  }, []);
 
   return (
     <div className="w-full flex justify-center pb-4">
@@ -42,8 +51,7 @@ export function Layout() {
     <div className="mx-auto min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 transition-colors">
       <Header />
       <div className="pt-16">
-        {adTopHtml ? <AdTop html={adTopHtml} /> : null}
-        <AdSlot variant="leaderboard" className="py-4 px-4" />
+        {adTopHtml ? <AdTop html={adTopHtml} /> : <AdSlot variant="leaderboard" className="py-4 px-4" />}
         <Outlet />
       </div>
       <Footer />
