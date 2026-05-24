@@ -59,7 +59,7 @@ export function EmailControls({
         type="text"
         value={localPart}
         onChange={(e) => onLocalPartChange(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
-        className="flex-1 min-w-0 bg-transparent px-2 py-1.5 text-sm font-mono text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+        className="flex-1 min-w-0 bg-transparent px-2 py-1.5 text-sm font-mono text-zinc-900 dark:text-white text-right outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
         placeholder={t("email name")}
       />
 

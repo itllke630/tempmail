@@ -31,6 +31,7 @@ export interface Env {
   ENABLE_OPENAPI?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TEAM_DOMAINS?: string;
+  AD_TOP_HTML?: string;
 }
 
 // 初始化 Hono 应用
@@ -369,6 +370,7 @@ app.get('/config', (c) => {
     apiRateLimitPerMinute: parseRateLimitPerMinute(c.env),
     openApiEnabled,
     showAff: c.env.SHOW_AFF === 'true',
+    adTopHtml: c.env.AD_TOP_HTML || '',
   });
 });
 

@@ -12,6 +12,7 @@ export interface AppConfig {
   openApiEnabled: boolean;
   cookiesSecret: string;
   showAff: boolean;
+  adTopHtml: string;
 }
 
 // 创建 React Context
