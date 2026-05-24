@@ -7,37 +7,33 @@ import { Toaster } from "react-hot-toast";
 import { useTheme } from "./hooks/useTheme";
 
 function AdTop({ html }: { html: string }) {
-  const ref = useRef<HTMLIFrameElement>(null);
-  const htmlRef = useRef(html);
-  htmlRef.current = html;
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const iframe = ref.current;
-    if (!iframe) return;
+    if (!containerRef.current || !html) return;
 
-    const onLoad = () => {
-      const doc = iframe.contentDocument;
-      if (!doc || !htmlRef.current) return;
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "width:728px;height:90px;border:none";
+    iframe.scrolling = "no";
+    iframe.title = "ad";
+    iframe.setAttribute("sandbox", "allow-scripts allow-popups allow-top-navigation-by-user-activation");
+
+    containerRef.current.innerHTML = "";
+    containerRef.current.appendChild(iframe);
+
+    const doc = iframe.contentDocument;
+    if (doc) {
       doc.open();
-      doc.write(htmlRef.current);
+      doc.write(html);
       doc.close();
+    }
+
+    return () => {
+      iframe.remove();
     };
+  }, [html]);
 
-    iframe.addEventListener("load", onLoad);
-    return () => iframe.removeEventListener("load", onLoad);
-  }, []);
-
-  return (
-    <div className="w-full flex justify-center pb-4">
-      <iframe
-        ref={ref}
-        title="ad"
-        style={{ width: "728px", height: "90px", border: "none" }}
-        scrolling="no"
-        sandbox="allow-scripts allow-popups allow-top-navigation-by-user-activation"
-      />
-    </div>
-  );
+  return <div ref={containerRef} className="w-full flex justify-center pb-4" />;
 }
 
 export function Layout() {
