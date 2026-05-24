@@ -7,47 +7,37 @@ import { Toaster } from "react-hot-toast";
 import { useTheme } from "./hooks/useTheme";
 
 function AdTop({ html }: { html: string }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLIFrameElement>(null);
+  const htmlRef = useRef(html);
+  htmlRef.current = html;
 
   useEffect(() => {
-    if (!ref.current || !html) return;
-    const container = ref.current;
-    container.innerHTML = "";
+    const iframe = ref.current;
+    if (!iframe) return;
 
-    // 解析广告 HTML，按顺序重建脚本并插入到容器内部
-    const temp = document.createElement("div");
-    temp.innerHTML = html;
-
-    // 拦截 document.write，将输出捕获到容器内（防御性处理）
-    const originalWrite = document.write.bind(document);
-    document.write = function (markup: string) {
-      container.innerHTML += markup;
-    } as typeof document.write;
-
-    while (temp.firstChild) {
-      const node = temp.firstChild;
-      if (node instanceof HTMLScriptElement) {
-        const script = document.createElement("script");
-        Array.from(node.attributes).forEach((a) => script.setAttribute(a.name, a.value));
-        if (node.src) {
-          script.src = node.src;
-        } else {
-          script.textContent = node.textContent;
-        }
-        // 关键：脚本插入到容器内部，invoke.js 通过 document.currentScript 定位
-        container.appendChild(script);
-        node.remove();
-      } else {
-        container.appendChild(node);
-      }
-    }
-
-    return () => {
-      document.write = originalWrite;
+    const onLoad = () => {
+      const doc = iframe.contentDocument;
+      if (!doc || !htmlRef.current) return;
+      doc.open();
+      doc.write(htmlRef.current);
+      doc.close();
     };
-  }, [html]);
 
-  return <div id="ad-slot-top" ref={ref} className="w-full flex justify-center pb-4" />;
+    iframe.addEventListener("load", onLoad);
+    return () => iframe.removeEventListener("load", onLoad);
+  }, []);
+
+  return (
+    <div className="w-full flex justify-center pb-4">
+      <iframe
+        ref={ref}
+        title="ad"
+        style={{ width: "728px", height: "90px", border: "none" }}
+        scrolling="no"
+        sandbox="allow-scripts allow-popups allow-top-navigation-by-user-activation"
+      />
+    </div>
+  );
 }
 
 export function Layout() {
