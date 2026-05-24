@@ -1,15 +1,15 @@
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Shuffle } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { Copy, Send, RefreshCw, ChevronDown, Check } from "../icons";
 import type { AppConfig } from "../../hooks/useConfig";
 import { useState, useCallback } from "react";
 
-function generateRandomLocalPart(): string {
+function generateRandomLocalPart(length: number = 10): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  const len = 8 + Math.floor(Math.random() * 9);
   let result = "";
-  for (let i = 0; i < len; i++) {
+  for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
@@ -24,18 +24,20 @@ interface EmailControlsProps {
   fullAddress: string;
   isFetching: boolean;
   telegramEnabled: boolean;
+  randomLength: number;
   onLocalPartChange: (value: string) => void;
   onDomainChange: (domain: string) => void;
   onRandom: () => void;
   onRefresh: () => void;
   onToggleTelegram: () => void;
+  onRandomLengthChange: (length: number) => void;
 }
 
 export function EmailControls({
   localPart, domain, config, teamDomains, isTeamMode,
-  fullAddress, isFetching, telegramEnabled,
+  fullAddress, isFetching, telegramEnabled, randomLength,
   onLocalPartChange, onDomainChange, onRandom, onRefresh,
-  onToggleTelegram,
+  onToggleTelegram, onRandomLengthChange,
 }: EmailControlsProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -93,6 +95,33 @@ export function EmailControls({
       >
         <Shuffle className="w-3.5 h-3.5" />
       </button>
+
+      {/* Random length input */}
+      <input
+        type="number"
+        min={5}
+        max={30}
+        value={randomLength}
+        onChange={(e) => {
+          const v = parseInt(e.target.value, 10);
+          if (e.target.value === "") {
+            onRandomLengthChange(5);
+          } else if (!isNaN(v)) {
+            onRandomLengthChange(v);
+          }
+        }}
+        onBlur={() => {
+          if (randomLength < 5) {
+            onRandomLengthChange(5);
+            toast.error(t("Min length is 5"));
+          } else if (randomLength > 30) {
+            onRandomLengthChange(30);
+            toast.error(t("Max length is 30"));
+          }
+        }}
+        title={t("Random name length (5-30)")}
+        className="w-10 shrink-0 bg-transparent px-0.5 py-1.5 text-center text-xs font-mono text-zinc-900 dark:text-white outline-none rounded border border-zinc-200/60 dark:border-zinc-700/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      />
 
       {/* Copy button */}
       <button

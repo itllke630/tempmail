@@ -50,6 +50,7 @@ export function Home() {
   const [telegramEnabled, setTelegramEnabled] = useState(() => {
     try { return localStorage.getItem(TG_KEY) === "true"; } catch { return false; }
   });
+  const [randomLength, setRandomLength] = useState(10);
 
   const ttlHours = config.domainTtlConfig?.[selectedDomain] ?? 24;
 
@@ -159,7 +160,11 @@ export function Home() {
   };
 
   const handleRandom = async () => {
-    const newLocal = generateRandomLocalPart();
+    if (randomLength < 5 || randomLength > 30) {
+      toast.error(t("Random name length must be between 5 and 30"));
+      return;
+    }
+    const newLocal = generateRandomLocalPart(randomLength);
     setLocalPart(newLocal);
     if (config.turnstileEnabled && !turnstileToken) {
       toast.error(t("No captcha response"));
@@ -215,11 +220,13 @@ export function Home() {
           fullAddress={fullAddress}
           isFetching={isFetching}
           telegramEnabled={telegramEnabled}
+          randomLength={randomLength}
           onLocalPartChange={handleLocalPartChange}
           onDomainChange={handleDomainChange}
           onRandom={handleRandom}
           onRefresh={handleRefresh}
           onToggleTelegram={handleToggleTelegram}
+          onRandomLengthChange={setRandomLength}
         />
       </div>
 
