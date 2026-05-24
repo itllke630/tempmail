@@ -69,53 +69,30 @@ jobs:
       # 配置 Wrangler (替换占位符)
       - name: Configure Wrangler
         run: |
-          set -e
-          sed -i "s|\${D1_DATABASE_ID}|${D1_DATABASE_ID}|g" wrangler.toml
-          sed -i "s|\${D1_DATABASE_NAME}|${D1_DATABASE_NAME}|g" wrangler.toml
-          sed -i "s|\${EMAIL_DOMAIN}|${EMAIL_DOMAIN}|g" wrangler.toml
-          sed -i "s|\${COOKIES_SECRET}|${COOKIES_SECRET}|g" wrangler.toml
-          sed -i "s|\${TURNSTILE_KEY}|${TURNSTILE_KEY}|g" wrangler.toml
-          sed -i "s|\${TURNSTILE_SECRET}|${TURNSTILE_SECRET}|g" wrangler.toml
-          if [ -n "${PASSWORD}" ]; then
-            sed -i "s|\${PASSWORD}|${PASSWORD}|g" wrangler.toml
-          else
-            sed -i '/^PASSWORD = /d' wrangler.toml
-          fi
-          if [ -n "${API_RATE_LIMIT_PER_MINUTE}" ]; then
-            sed -i "s|\${API_RATE_LIMIT_PER_MINUTE}|${API_RATE_LIMIT_PER_MINUTE}|g" wrangler.toml
-          else
-            sed -i '/^API_RATE_LIMIT_PER_MINUTE = /d' wrangler.toml
-          fi
-          if [ -n "${SHOW_AFF}" ]; then
-            sed -i "s|\${SHOW_AFF}|${SHOW_AFF}|g" wrangler.toml
-          else
-            sed -i '/^SHOW_AFF = /d' wrangler.toml
-          fi
-          if [ -n "${ENABLE_OPENAPI}" ]; then
-            sed -i "s|\${ENABLE_OPENAPI}|${ENABLE_OPENAPI}|g" wrangler.toml
-          else
-            sed -i '/^ENABLE_OPENAPI = /d' wrangler.toml
-          fi
-          if [ -n "${DOMAIN_TTL_CONFIG}" ]; then
-            sed -i "s|\${DOMAIN_TTL_CONFIG}|${DOMAIN_TTL_CONFIG}|g" wrangler.toml
-          else
-            sed -i '/^DOMAIN_TTL_CONFIG = /d' wrangler.toml
-          fi
-          if [ -n "${TELEGRAM_BOT_TOKEN}" ]; then
-            sed -i "s|\${TELEGRAM_BOT_TOKEN}|${TELEGRAM_BOT_TOKEN}|g" wrangler.toml
-          else
-            sed -i '/^TELEGRAM_BOT_TOKEN = /d' wrangler.toml
-          fi
-          if [ -n "${TEAM_DOMAINS}" ]; then
-            sed -i "s|\${TEAM_DOMAINS}|${TEAM_DOMAINS}|g" wrangler.toml
-          else
-            sed -i '/^TEAM_DOMAINS = /d' wrangler.toml
-          fi
-          if [ -n "${AD_TOP_HTML}" ]; then
-            sed -i "s|\${AD_TOP_HTML}|${AD_TOP_HTML}|g" wrangler.toml
-          else
-            sed -i '/^AD_TOP_HTML = /d' wrangler.toml
-          fi
+          python3 << 'PYEOF'
+          import os
+          with open('wrangler.toml', 'r') as f:
+              lines = f.readlines()
+          all_vars = [
+              'D1_DATABASE_ID', 'D1_DATABASE_NAME', 'EMAIL_DOMAIN',
+              'COOKIES_SECRET', 'TURNSTILE_KEY', 'TURNSTILE_SECRET',
+              'PASSWORD', 'API_RATE_LIMIT_PER_MINUTE', 'SHOW_AFF',
+              'ENABLE_OPENAPI', 'DOMAIN_TTL_CONFIG', 'TELEGRAM_BOT_TOKEN',
+              'TEAM_DOMAINS', 'AD_TOP_HTML',
+          ]
+          result = []
+          for line in lines:
+              for var in all_vars:
+                  val = os.environ.get(var, '')
+                  if line.strip().startswith(var + ' =') and not val:
+                      line = None
+                      break
+                  line = line.replace('${' + var + '}', val)
+              if line is not None:
+                  result.append(line)
+          with open('wrangler.toml', 'w') as f:
+              f.writelines(result)
+          PYEOF
         env:
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
           D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
