@@ -16,23 +16,21 @@ export function AdFrame({
   useEffect(() => {
     if (!ref.current || !html) return;
 
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+
     const iframe = document.createElement("iframe");
     iframe.style.cssText = `width:${width}px;height:${height}px;border:none;display:block`;
     iframe.scrolling = "no";
     iframe.title = "ad";
     iframe.setAttribute("sandbox", "allow-scripts allow-popups");
+    iframe.src = url;
 
     ref.current.innerHTML = "";
     ref.current.appendChild(iframe);
 
-    const doc = iframe.contentDocument;
-    if (doc) {
-      doc.open();
-      doc.write(html);
-      doc.close();
-    }
-
     return () => {
+      URL.revokeObjectURL(url);
       iframe.remove();
     };
   }, [html, width, height]);
