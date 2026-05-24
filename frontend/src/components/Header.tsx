@@ -49,14 +49,16 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 z-20 h-16 w-full px-5 backdrop-blur-xl md:px-10 text-gray-700 dark:text-white flex items-center justify-between border-b border-gray-200/50 dark:border-zinc-800/50 transition-colors">
-        <Link to="/" className="font-bold flex items-center justify-center gap-2">
+      <header className="fixed top-0 z-30 h-16 w-full px-5 md:px-10 flex items-center justify-between backdrop-blur-md bg-white/80 dark:bg-zinc-950/80 border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors">
+        <Link to="/" className="font-bold flex items-center justify-center gap-2 select-none">
           <VmailLogo />
-          <span className="text-lg font-bold tracking-tight">TEMPMAIL</span>
+          <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
+            TEMPMAIL
+          </span>
         </Link>
         <nav className="flex items-center">
           <a
-            className="ml-3 md:ml-6 text-sm font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+            className="ml-3 md:ml-6 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
             target="_blank"
             rel="noopener noreferrer"
             href="/api-docs"
@@ -65,19 +67,19 @@ export function Header() {
           </a>
           <button
             onClick={() => setShowAboutModal(true)}
-            className="ml-3 md:ml-6 text-sm font-medium hidden md:block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+            className="ml-3 md:ml-6 text-sm font-medium hidden md:block text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
           >
             {t("About")}
           </button>
           <button
             onClick={() => setShowPrivacyModal(true)}
-            className="ml-3 md:ml-6 text-sm font-medium hidden md:block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+            className="ml-3 md:ml-6 text-sm font-medium hidden md:block text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
           >
             {t("Privacy")}
           </button>
           <button
             onClick={() => setShowTermsModal(true)}
-            className="ml-3 md:ml-6 text-sm font-medium hidden md:block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+            className="ml-3 md:ml-6 text-sm font-medium hidden md:block text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
           >
             {t("Terms")}
           </button>
@@ -85,20 +87,20 @@ export function Header() {
           <div className="relative ml-3 md:ml-6" ref={langDropdownRef}>
             <button
               onClick={() => setShowLangDropdown(!showLangDropdown)}
-              className="flex items-center gap-1 text-sm hover:text-cyan-600 dark:hover:text-cyan-400 px-2 py-1.5 rounded-lg transition-colors"
+              className="flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 px-2 py-1.5 rounded-lg transition-colors"
             >
               <span>{currentLang.flag}</span>
               <span className="hidden md:inline">{currentLang.name}</span>
               <ChevronDown className="w-3 h-3" />
             </button>
             {showLangDropdown && (
-              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg py-1 z-50">
+              <div className="absolute right-0 mt-2 w-40 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-md border border-zinc-200/60 dark:border-zinc-700/50 rounded-xl shadow-lg py-1 z-50">
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
                     onClick={() => { i18n.changeLanguage(lang.code); setShowLangDropdown(false); }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-700 flex items-center gap-2 ${
-                      currentLang.code === lang.code ? "text-cyan-600 dark:text-cyan-400 font-medium" : "text-gray-700 dark:text-white"
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-2 ${
+                      currentLang.code === lang.code ? "text-cyan-600 dark:text-cyan-400 font-medium" : "text-zinc-700 dark:text-white"
                     }`}
                   >
                     <span>{lang.flag}</span>
@@ -111,12 +113,11 @@ export function Header() {
 
           <button
             onClick={toggleTheme}
-            className="ml-3 md:ml-6 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+            className="ml-3 md:ml-6 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
-
         </nav>
       </header>
 

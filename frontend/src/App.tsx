@@ -7,10 +7,13 @@ import { ConfigContext, AppConfig } from "./hooks/useConfig";
 import { Layout } from "./Layout";
 import { ThemeProvider } from "./hooks/useTheme";
 import { TeamAuthProvider } from "./hooks/useTeamAuth";
+import { useGA4 } from "./hooks/useGA4";
 
 const queryClient = new QueryClient();
 
 function App() {
+  useGA4();
+
   const [config, setConfig] = useState<AppConfig | null>(null);
 
   useEffect(() => {

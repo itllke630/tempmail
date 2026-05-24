@@ -59,6 +59,8 @@ jobs:
       # 运行构建
       - name: Build
         run: pnpm run build
+        env:
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
 
       # 配置 Wrangler (替换占位符)
       - name: Configure Wrangler

@@ -4,7 +4,7 @@ import { SkeletonLoader } from "./SkeletonLoader";
 import { EmptyState } from "./EmptyState";
 import { EmailListItem } from "./EmailListItem";
 import { EmailDetailView } from "./EmailDetailView";
-import { AdCard } from "../ads/AdCard";
+import { AdSlot } from "../ads/AdSlot";
 import type { Email } from "../../database_types";
 import type { OtpMatch } from "../../types";
 
@@ -128,8 +128,8 @@ export function EmailListPanel({
                     isUnread={isUnread(email)}
                     otpCodes={getOtpsForEmail(email)}
                   />
-                  {/* AdCard after 1st email */}
-                  {idx === 0 && <AdCard />}
+                  {/* Native Ad at position 3 */}
+                  {idx === 2 && <AdSlot variant="infeed" className="my-2" />}
                 </div>
               ))}
             </div>
