@@ -579,21 +579,24 @@ export default {
     let response = await env.ASSETS.fetch(request);
 
     // SPA 路由回退：如果静态资源返回 404，则返回 index.html
-    // 这样可以支持直接访问 /api-docs 等前端路由
-    if (response.status === 404) {
+    const isSpaFallback = response.status === 404;
+    if (isSpaFallback) {
       const indexRequest = new Request(new URL('/', request.url).toString(), request);
       response = env.ASSETS.fetch(indexRequest);
     }
 
-    // 服务端注入广告 HTML 到页面，确保脚本在解析阶段执行
-    const contentType = response.headers.get('Content-Type') || '';
-    if (contentType.includes('text/html') && env.AD_TOP_HTML) {
+    // 对 HTML 响应注入广告代码（服务端注入确保脚本在解析阶段执行）
+    const path = url.pathname;
+    const isHtmlRequest = path === '/' || path.endsWith('.html') || isSpaFallback;
+    if (isHtmlRequest && env.AD_TOP_HTML) {
       const html = await response.text();
       const wrapper = `<div style="display:flex;justify-content:center;padding-top:64px;padding-bottom:16px">${env.AD_TOP_HTML}</div>`;
       const injected = html.replace('<body>', `<body>${wrapper}`);
+      const headers = new Headers(response.headers);
+      headers.set('X-Ad-Injected', 'true');
       return new Response(injected, {
         status: response.status,
-        headers: response.headers,
+        headers,
       });
     }
 
