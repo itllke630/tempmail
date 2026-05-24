@@ -58,10 +58,7 @@ export function Home() {
 
   const { data: emails = [], isLoading, isFetching, refetch } = useQuery<Email[]>({
     queryKey: ["emails", address],
-    queryFn: () => {
-      console.log("[queryFn] fetching emails for address:", address);
-      return getEmails(address!, 50);
-    },
+    queryFn: () => getEmails(address!, 50),
     enabled: !!address,
     refetchInterval: false,
     retry: false,
@@ -148,7 +145,6 @@ export function Home() {
 
   const updateAddress = useCallback((newLocal: string, newDomain: string) => {
     const addr = `${newLocal}@${newDomain}`;
-    console.log("[updateAddress] setting address to:", addr);
     const newTtlHours = config.domainTtlConfig?.[newDomain] ?? 24;
     const now = Date.now();
     const expires = now + newTtlHours * 60 * 60 * 1000;
@@ -161,7 +157,6 @@ export function Home() {
   }, [config.domainTtlConfig, queryClient]);
 
   const handleLocalPartChange = (value: string) => {
-    console.log("[handleLocalPartChange] value:", value, "selectedDomain:", selectedDomain);
     setLocalPart(value);
     if (value) updateAddress(value, selectedDomain);
   };
@@ -178,13 +173,13 @@ export function Home() {
     }
     const newLocal = generateRandomLocalPart(randomLength);
     setLocalPart(newLocal);
+    updateAddress(newLocal, selectedDomain);
     if (config.turnstileEnabled && !turnstileToken) {
       toast.error(t("No captcha response"));
       return;
     }
     try {
       await verifyTurnstile(config.turnstileEnabled ? turnstileToken : undefined);
-      updateAddress(newLocal, selectedDomain);
       toast.success(t("New address generated"));
     } catch {
       toast.error(t("Failed to verify captcha"));
