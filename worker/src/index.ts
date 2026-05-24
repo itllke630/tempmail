@@ -29,6 +29,7 @@ export interface Env {
   API_RATE_LIMIT_PER_MINUTE?: string;
   SHOW_AFF?: string;
   ENABLE_OPENAPI?: string;
+  TELEGRAM_BOT_TOKEN?: string;
 }
 
 // 初始化 Hono 应用
@@ -79,24 +80,6 @@ function isSiteUnlocked(request: Request, env: Env): boolean {
   });
 }
 
-function shouldBypassSiteGate(pathname: string): boolean {
-  if (pathname === '/' || pathname === '/index.html') {
-    return true;
-  }
-  if (pathname.startsWith('/api/') || pathname.startsWith('/v1/') || pathname === '/config') {
-    return true;
-  }
-  if (pathname === '/auth/unlock' || pathname === '/auth/logout' || pathname === '/auth/status') {
-    return true;
-  }
-  if (pathname.startsWith('/assets/')) {
-    return true;
-  }
-  if (pathname === '/favicon.ico' || pathname.endsWith('.map')) {
-    return true;
-  }
-  return false;
-}
 
 // fix: 增强请求体验证逻辑。
 // 此前的实现方式在请求体解析失败时会静默处理，导致后续处理流程因缺少数据而返回一个模糊的400错误。
@@ -551,15 +534,6 @@ export default {
   // HTTP 请求处理逻辑
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-
-    if (!shouldBypassSiteGate(url.pathname) && !isSiteUnlocked(request, env)) {
-      return new Response(JSON.stringify({ message: 'Site is locked' }), {
-        status: 401,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    }
 
     // API 路由
     if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/v1/') || url.pathname === '/config' || url.pathname.startsWith('/auth/')) {

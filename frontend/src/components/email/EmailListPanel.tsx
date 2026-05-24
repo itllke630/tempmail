@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Inbox, RefreshCw, Lock } from "../icons";
-import { SiteStats } from "../SiteStats";
 import { SkeletonLoader } from "./SkeletonLoader";
 import { EmptyState } from "./EmptyState";
 import { EmailListItem } from "./EmailListItem";
@@ -10,7 +9,6 @@ import type { Email } from "../../database_types";
 import type { OtpMatch } from "../../types";
 
 interface EmailListPanelProps {
-  isAddressCreated: boolean;
   emails: Email[];
   isLoading: boolean;
   isFetching: boolean;
@@ -29,7 +27,7 @@ interface EmailListPanelProps {
 }
 
 export function EmailListPanel({
-  isAddressCreated, emails, isLoading, isFetching, isDeleting,
+  emails, isLoading, isFetching, isDeleting,
   selectedIds, setSelectedIds, selectedEmail, onSelectEmail,
   onCloseDetail, onExpand, onDelete, onRefresh, onShowPassword,
   getOtpsForEmail, lastViewedAt,
@@ -55,17 +53,6 @@ export function EmailListPanel({
       setSelectedIds(emails.map((e) => e.id));
     }
   };
-
-  // If no address created, show stats
-  if (!isAddressCreated) {
-    return (
-      <main className="flex-1">
-        <div className="max-w-lg mx-auto">
-          <SiteStats />
-        </div>
-      </main>
-    );
-  }
 
   // If an email is selected, show detail view
   if (selectedEmail) {

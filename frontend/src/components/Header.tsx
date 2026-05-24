@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { VmailLogo, GitHubPlat, ChevronDown, Sun, Moon } from "./icons";
+import { VmailLogo, ChevronDown, Sun, Moon } from "./icons";
 import { useTranslation } from "react-i18next";
 import { useState, useRef, useEffect } from "react";
 import { InfoModal } from "./InfoModal";
@@ -117,17 +117,6 @@ export function Header() {
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          <a
-            className="ml-3 md:ml-6"
-            target="_blank"
-            rel="noopener noreferrer"
-            href="https://github.com/oiov/vmail"
-          >
-            <button className="flex h-8 items-center gap-1.5 rounded-lg border border-gray-300 dark:border-zinc-600 px-3 text-xs font-medium text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
-              <GitHubPlat />
-              <span>Star</span>
-            </button>
-          </a>
         </nav>
       </header>
 

@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef, useCallback } from "react"; // useRef still used by mailboxMetaSignatureRef
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import randomName from "@scaleway/random-name";
 import { useTranslation } from "react-i18next";
 import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
@@ -9,9 +8,9 @@ import { getEmails, getMailboxMeta, deleteEmails, verifyTurnstile, loginByPasswo
 import { useConfig } from "../hooks/useConfig";
 import { useTeamAuth } from "../hooks/useTeamAuth";
 import { usePasswordModal } from "../components/password";
-import { getRandomCharacter, encrypt } from "../lib/utlis";
+import { encrypt } from "../lib/utlis";
 import { extractOtpsFromEmail } from "../lib/otp";
-import { ControlPanel } from "../components/controls/ControlPanel";
+import { EmailControls, generateRandomLocalPart } from "../components/controls/EmailControls";
 import { EmailListPanel } from "../components/email/EmailListPanel";
 import { TeamLoginModal } from "../components/modals/TeamLoginModal";
 import { PasswordIcon, Close } from "../components/icons";
@@ -24,7 +23,21 @@ export function Home() {
   const queryClient = useQueryClient();
   const teamAuth = useTeamAuth();
 
-  const [address, setAddress] = useState<string | undefined>(() => Cookies.get("userMailbox"));
+  const [localPart, setLocalPart] = useState(() => {
+    const addr = Cookies.get("userMailbox");
+    if (addr) return addr.split("@")[0];
+    return generateRandomLocalPart();
+  });
+
+  const getInitialDomain = () => {
+    if (teamAuth.isAuthenticated && teamAuth.teamDomains.length > 0) {
+      return teamAuth.teamDomains[0];
+    }
+    return config.emailDomain[0];
+  };
+
+  const [selectedDomain, setSelectedDomain] = useState(getInitialDomain);
+  const [address, setAddress] = useState<string | undefined>(() => Cookies.get("userMailbox") || undefined);
   const [expiryTimestamp, setExpiryTimestamp] = useState<number | undefined>(() => {
     const expiry = Cookies.get("emailExpiry");
     return expiry ? parseInt(expiry, 10) : undefined;
@@ -32,7 +45,6 @@ export function Home() {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
-  const [selectedDomain, setSelectedDomain] = useState(config.emailDomain[0]);
   const [hasReceivedEmail, setHasReceivedEmail] = useState(false);
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -73,6 +85,44 @@ export function Home() {
     },
   });
 
+  // 30 秒自动刷新
+  useEffect(() => {
+    if (!address) return;
+    const interval = setInterval(() => { refetch(); }, 30_000);
+    return () => clearInterval(interval);
+  }, [address, refetch]);
+
+  // 更新团队域名默认值
+  useEffect(() => {
+    if (teamAuth.isAuthenticated && teamAuth.teamDomains.length > 0) {
+      setSelectedDomain(teamAuth.teamDomains[0]);
+    }
+  }, [teamAuth.isAuthenticated]);
+
+  // 自动创建地址
+  useEffect(() => {
+    if (address) return;
+    const create = async () => {
+      setIsCreating(true);
+      try {
+        await verifyTurnstile(config.turnstileEnabled ? turnstileToken : undefined);
+        const addr = `${localPart}@${selectedDomain}`;
+        const now = Date.now();
+        const expires = now + ttlHours * 60 * 60 * 1000;
+        Cookies.set("userMailbox", addr, { expires: 1 });
+        Cookies.set("emailExpiry", expires.toString(), { expires: 1 });
+        setAddress(addr);
+        setExpiryTimestamp(expires);
+        toast.success(t("Email created"));
+      } catch {
+        // Turnstile not ready yet, will retry when token changes
+      } finally {
+        setIsCreating(false);
+      }
+    };
+    create();
+  }, [address, turnstileToken]);
+
   useEffect(() => {
     if (emails.length > 0 && !hasReceivedEmail) setHasReceivedEmail(true);
     if (!address) {
@@ -82,39 +132,43 @@ export function Home() {
     }
   }, [emails, address, hasReceivedEmail]);
 
-  const handleCreateAddress = async () => {
+  const updateAddress = useCallback((newLocal: string, newDomain: string) => {
+    const addr = `${newLocal}@${newDomain}`;
+    const newTtlHours = config.domainTtlConfig?.[newDomain] ?? 24;
+    const now = Date.now();
+    const expires = now + newTtlHours * 60 * 60 * 1000;
+    Cookies.set("userMailbox", addr, { expires: 1 });
+    Cookies.set("emailExpiry", expires.toString(), { expires: 1 });
+    setAddress(addr);
+    setExpiryTimestamp(expires);
+    setHasReceivedEmail(false);
+    queryClient.invalidateQueries({ queryKey: ["emails"] });
+  }, [config.domainTtlConfig, queryClient]);
+
+  const handleLocalPartChange = (value: string) => {
+    setLocalPart(value);
+    if (value) updateAddress(value, selectedDomain);
+  };
+
+  const handleDomainChange = (domain: string) => {
+    setSelectedDomain(domain);
+    updateAddress(localPart, domain);
+  };
+
+  const handleRandom = async () => {
+    const newLocal = generateRandomLocalPart();
+    setLocalPart(newLocal);
     if (config.turnstileEnabled && !turnstileToken) {
       toast.error(t("No captcha response"));
       return;
     }
-    setIsCreating(true);
     try {
       await verifyTurnstile(config.turnstileEnabled ? turnstileToken : undefined);
-      const mailbox = `${randomName("", getRandomCharacter())}@${selectedDomain}`;
-      const now = Date.now();
-      const expires = now + ttlHours * 60 * 60 * 1000;
-      Cookies.set("userMailbox", mailbox, { expires: 1 });
-      Cookies.set("emailExpiry", expires.toString(), { expires: 1 });
-      setAddress(mailbox);
-      setExpiryTimestamp(expires);
-      setHasReceivedEmail(false);
-      toast.success(t("Email created successfully"));
+      updateAddress(newLocal, selectedDomain);
+      toast.success(t("New address generated"));
     } catch {
       toast.error(t("Failed to verify captcha"));
-    } finally {
-      setIsCreating(false);
     }
-  };
-
-  const handleStopAddress = () => {
-    Cookies.remove("userMailbox");
-    Cookies.remove("emailExpiry");
-    setAddress(undefined);
-    mailboxMetaSignatureRef.current = null;
-    setHasReceivedEmail(false);
-    setSelectedEmail(null);
-    setExpiryTimestamp(undefined);
-    queryClient.invalidateQueries({ queryKey: ["emails"] });
   };
 
   const handleRefresh = () => { refetch(); toast.success(t("Mailbox refreshed")); };
@@ -147,10 +201,13 @@ export function Home() {
     setIsLoggingIn(true);
     try {
       const data = await loginByPassword(password);
+      const domain = data.address.split("@")[1];
       const now = Date.now();
       const expires = now + ttlHours * 60 * 60 * 1000;
       Cookies.set("userMailbox", data.address, { expires: 1 });
       Cookies.set("emailExpiry", expires.toString(), { expires: 1 });
+      setLocalPart(data.address.split("@")[0]);
+      setSelectedDomain(domain);
       setAddress(data.address);
       setExpiryTimestamp(expires);
       setShowPasswordModal(false);
@@ -189,36 +246,51 @@ export function Home() {
     ), { id: "password-notification", duration: 5000, position: "top-center", style: { background: "transparent", border: "none", padding: 0, boxShadow: "none" } });
   }, [t]);
 
+  const fullAddress = `${localPart}@${selectedDomain}`;
+
   return (
-    <div className="flex flex-col md:flex-row gap-5 justify-center items-start pt-20 pb-10 px-4 md:px-6 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-5 items-center pt-20 pb-10 px-4 md:px-6 max-w-6xl mx-auto w-full">
       <PasswordModal onLogin={handleLogin} isLoggingIn={isLoggingIn} />
 
-      <ControlPanel
+      <EmailControls
+        localPart={localPart}
+        domain={selectedDomain}
         config={config}
-        address={address}
-        expiryTimestamp={expiryTimestamp}
-        selectedDomain={selectedDomain}
         teamDomains={teamAuth.teamDomains}
         isTeamMode={teamAuth.isAuthenticated}
-        teamName={teamAuth.teamName}
-        onDomainSelect={setSelectedDomain}
-        onTeamLoginClick={() => setShowTeamModal(true)}
-        onTeamLogout={teamAuth.logout}
-        onCreateAddress={handleCreateAddress}
-        isCreating={isCreating}
-        turnstileToken={turnstileToken}
-        onTurnstileSuccess={setTurnstileToken}
-        onStop={handleStopAddress}
-        onRefresh={handleRefresh}
+        fullAddress={fullAddress}
         isFetching={isFetching}
-        onDeleteAll={() => handleDeleteEmails(emails.map((e) => e.id))}
-        hasEmails={emails.length > 0}
-        onShowPassword={() => { const pw = getPassword(); if (pw) showPasswordToast(pw); }}
-        onResetExpiry={handleResetExpiry}
+        onLocalPartChange={handleLocalPartChange}
+        onDomainChange={handleDomainChange}
+        onRandom={handleRandom}
+        onRefresh={handleRefresh}
       />
 
+      <div className="w-full flex justify-center gap-2">
+        <button
+          onClick={() => { const pw = getPassword(); if (pw) showPasswordToast(pw); }}
+          className="text-xs text-gray-400 dark:text-zinc-500 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+        >
+          {t("View password")}
+        </button>
+        {!teamAuth.isAuthenticated ? (
+          <button
+            onClick={() => setShowTeamModal(true)}
+            className="text-xs text-gray-400 dark:text-zinc-500 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+          >
+            {t("Team Login")}
+          </button>
+        ) : (
+          <button
+            onClick={teamAuth.logout}
+            className="text-xs text-gray-400 dark:text-zinc-500 hover:text-red-500 transition-colors"
+          >
+            {t("Team Logout")}
+          </button>
+        )}
+      </div>
+
       <EmailListPanel
-        isAddressCreated={!!address}
         emails={emails}
         isLoading={isLoading}
         isFetching={isFetching}
@@ -243,7 +315,6 @@ export function Home() {
         isLoggingIn={teamAuth.isLoading}
         error={teamAuth.error}
       />
-
     </div>
   );
 }
