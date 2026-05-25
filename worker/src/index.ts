@@ -609,10 +609,11 @@ export default {
   // 邮件处理逻辑
   async email(message: ForwardableEmail, env: Env, ctx: ExecutionContext) {
     const db = getD1DB(env.DB);
+    let mail: any = null;
 
     try {
       const raw = await new Response(message.raw).text();
-      const mail = await new PostalMime().parse(raw);
+      mail = await new PostalMime().parse(raw);
       const now = new Date();
 
       const newEmail: InsertEmail = {
@@ -643,30 +644,29 @@ export default {
       await insertEmail(db, email);
       await incrementEmailsReceived(db);
       await incrementDailyEmailsReceived(db);
-
-      // Telegram 通知
-      if (env.TELEGRAM_BOT_TOKEN) {
-        ctx.waitUntil((async () => {
-          try {
-            const subs = await getTelegramSubscriptionsByAddress(db, message.to);
-            console.log(`[Telegram] email to=${message.to} subs=${subs.length}`);
-            if (subs.length > 0) {
-              const fromName = mail.from?.name || '';
-              const fromAddress = mail.from?.address || message.from;
-              const text = buildEmailNotification(message.to, fromName, fromAddress, mail.subject);
-              for (const sub of subs) {
-                const res = await sendMessage(env.TELEGRAM_BOT_TOKEN!, sub.chatId, text);
-                console.log(`[Telegram] sendMessage chatId=${sub.chatId} status=${res.status}`);
-              }
-            }
-          } catch (e: any) {
-            console.error('发送 Telegram 通知失败:', e);
-          }
-        })());
-      }
     } catch (e: any) {
       console.error('处理邮件失败:', e);
       message.setReject(`邮件处理失败: ${e.message}`);
+      return;
+    }
+
+    // Telegram 通知（同步 await，不依赖 ctx.waitUntil）
+    if (env.TELEGRAM_BOT_TOKEN && mail) {
+      try {
+        const subs = await getTelegramSubscriptionsByAddress(db, message.to);
+        console.log(`[Telegram] email to=${message.to} subs=${subs.length}`);
+        if (subs.length > 0) {
+          const fromName = mail.from?.name || '';
+          const fromAddress = mail.from?.address || message.from;
+          const text = buildEmailNotification(message.to, fromName, fromAddress, mail.subject);
+          for (const sub of subs) {
+            const res = await sendMessage(env.TELEGRAM_BOT_TOKEN, sub.chatId, text);
+            console.log(`[Telegram] sendMessage chatId=${sub.chatId} status=${res.status}`);
+          }
+        }
+      } catch (e: any) {
+        console.error('发送 Telegram 通知失败:', e);
+      }
     }
   },
 
