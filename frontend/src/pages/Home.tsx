@@ -252,13 +252,13 @@ export function Home() {
         />
 
         {config.turnstileEnabled && (
-          <div className="flex justify-center [&_iframe]:!w-full bg-gray-100 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-zinc-700/50 overflow-hidden">
+          <div className="flex justify-end">
             <Turnstile
               key={turnstileKey}
               siteKey={config.turnstileKey}
               onSuccess={setTurnstileToken}
               onExpire={() => setTurnstileToken("")}
-              options={{ theme: "auto", size: "flexible" }}
+              options={{ theme: "auto", size: "compact" }}
             />
           </div>
         )}
