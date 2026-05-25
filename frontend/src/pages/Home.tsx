@@ -113,10 +113,13 @@ export function Home() {
   // Auto-create address
   useEffect(() => {
     if (address) return;
+    if (config.turnstileEnabled && !turnstileToken) return;
     const create = async () => {
       setIsCreating(true);
       try {
-        await verifyTurnstile(config.turnstileEnabled ? turnstileToken : undefined);
+        if (config.turnstileEnabled) {
+          await verifyTurnstile(turnstileToken);
+        }
         const addr = `${localPart}@${selectedDomain}`;
         const now = Date.now();
         const expires = now + ttlHours * 60 * 60 * 1000;
@@ -185,7 +188,9 @@ export function Home() {
       return;
     }
     try {
-      await verifyTurnstile(config.turnstileEnabled ? turnstileToken : undefined);
+      if (config.turnstileEnabled) {
+        await verifyTurnstile(turnstileToken);
+      }
       setTurnstileToken("");
       setTurnstileKey(k => k + 1);
       toast.success(t("New address generated"));

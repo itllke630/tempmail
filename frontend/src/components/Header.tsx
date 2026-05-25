@@ -94,7 +94,7 @@ export function Header() {
               onClick={() => setShowTeamModal(true)}
               className="ml-3 md:ml-6 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
             >
-              {t("Teams")}
+              {t("Team Login")}
             </button>
           )}
 
