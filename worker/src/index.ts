@@ -377,7 +377,7 @@ app.get('/config', (c) => {
     openApiEnabled,
     showAff: c.env.SHOW_AFF === 'true',
     telegramBotUsername: c.env.TELEGRAM_BOT_USERNAME || null,
-    version: "c9db1dd",
+    version: "2026-05-25-v3",
   };
   return new Response(JSON.stringify(responseData), {
     headers: {
