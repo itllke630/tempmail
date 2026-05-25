@@ -2,7 +2,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Home } from "./pages/Home";
-import { ApiDocs } from "./pages/ApiDocs";
 import { ConfigContext, AppConfig } from "./hooks/useConfig";
 import { Layout } from "./Layout";
 import { ThemeProvider } from "./hooks/useTheme";
@@ -34,7 +33,6 @@ function App() {
               <Routes>
                 <Route element={<Layout />}>
                   <Route path="/" element={<Home />} />
-                  <Route path="/api-docs" element={<ApiDocs />} />
                 </Route>
               </Routes>
             </BrowserRouter>

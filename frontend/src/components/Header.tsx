@@ -32,8 +32,10 @@ export function Header() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const [showToolsDropdown, setShowToolsDropdown] = useState(false);
   const [showTeamModal, setShowTeamModal] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
+  const toolsDropdownRef = useRef<HTMLDivElement>(null);
 
   const currentLang = languages.find((l) => {
     if (l.code === i18n.language) return true;
@@ -45,6 +47,9 @@ export function Header() {
     const handler = (e: MouseEvent) => {
       if (langDropdownRef.current && !langDropdownRef.current.contains(e.target as Node)) {
         setShowLangDropdown(false);
+      }
+      if (toolsDropdownRef.current && !toolsDropdownRef.current.contains(e.target as Node)) {
+        setShowToolsDropdown(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -61,14 +66,22 @@ export function Header() {
           </span>
         </Link>
         <nav className="flex items-center">
-          <a
-            className="ml-3 md:ml-6 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-            href="/api-docs"
-          >
-            API
-          </a>
+          <div className="relative ml-3 md:ml-6" ref={toolsDropdownRef}>
+            <button
+              onClick={() => setShowToolsDropdown(!showToolsDropdown)}
+              className="flex items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+            >
+              Tools
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {showToolsDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-md border border-zinc-200/60 dark:border-zinc-700/50 rounded-xl shadow-lg py-1 z-50">
+                <div className="px-3 py-2 text-xs text-zinc-400 dark:text-zinc-500">
+                  More tools coming soon
+                </div>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setShowAboutModal(true)}
             className="ml-3 md:ml-6 text-sm font-medium hidden md:block text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"

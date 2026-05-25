@@ -8,6 +8,7 @@ import { getEmails, getMailboxMeta, deleteEmails, verifyTurnstile } from "../ser
 import { useConfig } from "../hooks/useConfig";
 import { useTeamAuth } from "../hooks/useTeamAuth";
 import { extractOtpsFromEmail } from "../lib/otp";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { EmailControls, generateRandomLocalPart } from "../components/controls/EmailControls";
 import { EmailListPanel } from "../components/email/EmailListPanel";
 import { AdFrame } from "../components/ads/AdFrame";
@@ -43,6 +44,7 @@ export function Home() {
     return expiry ? parseInt(expiry, 10) : undefined;
   });
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileKey, setTurnstileKey] = useState(0);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [hasReceivedEmail, setHasReceivedEmail] = useState(false);
@@ -122,6 +124,8 @@ export function Home() {
         Cookies.set("emailExpiry", expires.toString(), { expires: 1 });
         setAddress(addr);
         setExpiryTimestamp(expires);
+        setTurnstileToken("");
+        setTurnstileKey(k => k + 1);
       } catch {
         // Turnstile not ready yet
       } finally {
@@ -182,6 +186,8 @@ export function Home() {
     }
     try {
       await verifyTurnstile(config.turnstileEnabled ? turnstileToken : undefined);
+      setTurnstileToken("");
+      setTurnstileKey(k => k + 1);
       toast.success(t("New address generated"));
     } catch {
       toast.error(t("Failed to verify captcha"));
@@ -226,7 +232,7 @@ export function Home() {
   return (
     <>
       {/* Email controls: constrained width, centered */}
-      <div className="max-w-2xl mx-auto px-4 md:px-6 pt-5">
+      <div className="max-w-2xl mx-auto px-4 md:px-6 pt-5 space-y-3">
         <EmailControls
           localPart={localPart}
           domain={selectedDomain}
@@ -244,6 +250,18 @@ export function Home() {
           onToggleTelegram={handleToggleTelegram}
           onRandomLengthChange={setRandomLength}
         />
+
+        {config.turnstileEnabled && (
+          <div className="flex justify-center [&_iframe]:!w-full bg-gray-100 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-zinc-700/50 overflow-hidden">
+            <Turnstile
+              key={turnstileKey}
+              siteKey={config.turnstileKey}
+              onSuccess={setTurnstileToken}
+              onExpire={() => setTurnstileToken("")}
+              options={{ theme: "auto", size: "flexible" }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Three-column layout: left ad | center inbox | right ad */}
