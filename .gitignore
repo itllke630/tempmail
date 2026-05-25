@@ -8,4 +8,5 @@ fly.toml
 .env*.local
 .worktrees
 .claude
+.wrangler
 docs/superpowers
