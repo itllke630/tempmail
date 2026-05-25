@@ -158,3 +158,14 @@ export const telegramSubscriptions = sqliteTable(
 );
 
 export type TelegramSubscription = typeof telegramSubscriptions.$inferSelect;
+
+// ==================== Notification Logs 表 ====================
+export const notificationLogs = sqliteTable("notification_logs", {
+  id: text("id").primaryKey(),
+  recipient: text("recipient").notNull(),
+  step: text("step").notNull(),
+  detail: text("detail"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export type NotificationLog = typeof notificationLogs.$inferSelect;

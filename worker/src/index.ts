@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-workers';
 import { cors } from 'hono/cors';
 // 导入数据库相关的模块
-import { deleteEmails, findEmailById, getEmailsByMessageTo, insertEmail, deleteExpiredEmailsByDomain, insertApiKey, getSiteStats, incrementEmailsReceived, incrementApiKeysCreated, incrementAddressesCreated, incrementDailyAddressesCreated, incrementDailyEmailsReceived, incrementDailyApiKeysCreated, getMailboxMetaByAddress, getTelegramSubscriptionsByAddress } from './database/dao';
+import { deleteEmails, findEmailById, getEmailsByMessageTo, insertEmail, deleteExpiredEmailsByDomain, insertApiKey, getSiteStats, incrementEmailsReceived, incrementApiKeysCreated, incrementAddressesCreated, incrementDailyAddressesCreated, incrementDailyEmailsReceived, incrementDailyApiKeysCreated, getMailboxMetaByAddress, getTelegramSubscriptionsByAddress, insertNotificationLog, getRecentNotificationLogs } from './database/dao';
 import { getD1DB } from './database/db';
 import { InsertEmail, insertEmailSchema } from './database/schema';
 import { nanoid } from 'nanoid/non-secure';
@@ -593,6 +593,28 @@ app.post('/api/admin/telegram/test', async (c) => {
   return c.json({ found: true, subs: subs.length, results });
 });
 
+// 查看 Telegram 通知日志
+app.post('/api/admin/telegram/logs', async (c) => {
+  if (!c.env.PASSWORD) {
+    return c.json({ error: 'Not configured' }, 403);
+  }
+
+  let body: { password?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid body' }, 400);
+  }
+
+  if (!body.password || body.password !== c.env.PASSWORD) {
+    return c.json({ error: 'Invalid admin password' }, 401);
+  }
+
+  const db = getD1DB(c.env.DB);
+  const logs = await getRecentNotificationLogs(db, 30);
+  return c.json(logs);
+});
+
 // 挂载 v1 API 路由
 app.route('/v1', v1Api);
 // 保留旧路径以兼容已有调用
@@ -650,22 +672,26 @@ export default {
       return;
     }
 
-    // Telegram 通知（同步 await，不依赖 ctx.waitUntil）
-    if (env.TELEGRAM_BOT_TOKEN && mail) {
+    // Telegram 通知
+    if (!env.TELEGRAM_BOT_TOKEN) {
+      await insertNotificationLog(db, nanoid(), message.to, "no_token", null);
+    } else if (!mail) {
+      await insertNotificationLog(db, nanoid(), message.to, "no_mail", null);
+    } else {
       try {
         const subs = await getTelegramSubscriptionsByAddress(db, message.to);
-        console.log(`[Telegram] email to=${message.to} subs=${subs.length}`);
+        await insertNotificationLog(db, nanoid(), message.to, "subs_lookup", `found=${subs.length}`);
         if (subs.length > 0) {
           const fromName = mail.from?.name || '';
           const fromAddress = mail.from?.address || message.from;
           const text = buildEmailNotification(message.to, fromName, fromAddress, mail.subject);
           for (const sub of subs) {
             const res = await sendMessage(env.TELEGRAM_BOT_TOKEN, sub.chatId, text);
-            console.log(`[Telegram] sendMessage chatId=${sub.chatId} status=${res.status}`);
+            await insertNotificationLog(db, nanoid(), message.to, "sent", `chatId=${sub.chatId} status=${res.status}`);
           }
         }
       } catch (e: any) {
-        console.error('发送 Telegram 通知失败:', e);
+        await insertNotificationLog(db, nanoid(), message.to, "error", e.message || String(e));
       }
     }
   },
