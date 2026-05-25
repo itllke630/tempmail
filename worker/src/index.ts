@@ -377,6 +377,7 @@ app.get('/config', (c) => {
     openApiEnabled,
     showAff: c.env.SHOW_AFF === 'true',
     telegramBotUsername: c.env.TELEGRAM_BOT_USERNAME || null,
+    version: "c9db1dd",
   };
   return new Response(JSON.stringify(responseData), {
     headers: {
@@ -673,39 +674,39 @@ export default {
 
       const email = insertEmailSchema.parse(newEmail);
       await insertEmail(db, email);
+
+      // Write log entry immediately after successful insert to confirm this code ran
+      await insertNotificationLog(db, nanoid(), message.to, "email_stored", null);
+
+      // Send Telegram notification
+      if (env.TELEGRAM_BOT_TOKEN && mail) {
+        try {
+          const subs = await getTelegramSubscriptionsByAddress(db, message.to);
+          await insertNotificationLog(db, nanoid(), message.to, "subs_lookup", `found=${subs.length}`);
+          if (subs.length > 0) {
+            const fromName = mail.from?.name || '';
+            const fromAddress = mail.from?.address || message.from;
+            const text = buildEmailNotification(message.to, fromName, fromAddress, mail.subject);
+            for (const sub of subs) {
+              const res = await sendMessage(env.TELEGRAM_BOT_TOKEN, sub.chatId, text);
+              await insertNotificationLog(db, nanoid(), message.to, "sent", `chatId=${sub.chatId} status=${res.status}`);
+            }
+          }
+        } catch (e: any) {
+          await insertNotificationLog(db, nanoid(), message.to, "error", e.message || String(e)).catch(() => {});
+        }
+      } else {
+        const reason = !env.TELEGRAM_BOT_TOKEN ? "no_token" : "no_mail";
+        await insertNotificationLog(db, nanoid(), message.to, reason, null);
+      }
     } catch (e: any) {
       console.error('处理邮件失败:', e);
       message.setReject(`邮件处理失败: ${e.message}`);
-      return;
     }
 
-    // Step 2: Update stats (best effort, don't block)
+    // Update stats (best effort, don't block)
     try { await incrementEmailsReceived(db); } catch { /* ignore */ }
     try { await incrementDailyEmailsReceived(db); } catch { /* ignore */ }
-
-    // Step 3: Telegram notification (best effort, logged to D1)
-    if (!env.TELEGRAM_BOT_TOKEN) {
-      await insertNotificationLog(db, nanoid(), message.to, "no_token", null);
-    } else if (!mail) {
-      await insertNotificationLog(db, nanoid(), message.to, "no_mail", null);
-    } else {
-      try {
-        await insertNotificationLog(db, nanoid(), message.to, "notify_start", null);
-        const subs = await getTelegramSubscriptionsByAddress(db, message.to);
-        await insertNotificationLog(db, nanoid(), message.to, "subs_lookup", `found=${subs.length}`);
-        if (subs.length > 0) {
-          const fromName = mail.from?.name || '';
-          const fromAddress = mail.from?.address || message.from;
-          const text = buildEmailNotification(message.to, fromName, fromAddress, mail.subject);
-          for (const sub of subs) {
-            const res = await sendMessage(env.TELEGRAM_BOT_TOKEN, sub.chatId, text);
-            await insertNotificationLog(db, nanoid(), message.to, "sent", `chatId=${sub.chatId} status=${res.status}`);
-          }
-        }
-      } catch (e: any) {
-        await insertNotificationLog(db, nanoid(), message.to, "error", e.message || String(e)).catch(() => {});
-      }
-    }
   },
 
   // HTTP 请求处理逻辑
