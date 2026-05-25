@@ -61,10 +61,11 @@ export function Home() {
 
   const { data: emails = [], isLoading, isFetching, refetch } = useQuery<Email[]>({
     queryKey: ["emails", address],
-    queryFn: () => getEmails(address!, 50),
-    enabled: !!address,
+    queryFn: () => address ? getEmails(address, 50) : Promise.resolve([]),
     refetchInterval: false,
     retry: false,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const mailboxMetaSignatureRef = useRef<string | null>(null);

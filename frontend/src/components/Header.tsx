@@ -78,25 +78,12 @@ export function Header() {
           >
             {t("Privacy")}
           </button>
-
-          {/* Team Login/Logout */}
-          {teamAuth.isAuthenticated ? (
-            <button
-              onClick={teamAuth.logout}
-              className="ml-3 md:ml-6 flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-              title={t("Team Logout")}
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">{t("Team Logout")}</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowTeamModal(true)}
-              className="ml-3 md:ml-6 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
-            >
-              {t("Team Login")}
-            </button>
-          )}
+          <button
+            onClick={() => setShowTermsModal(true)}
+            className="ml-3 md:ml-6 text-sm font-medium hidden md:block text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+          >
+            Teams
+          </button>
 
           <div className="relative ml-3 md:ml-6" ref={toolsDropdownRef}>
             <button
@@ -114,6 +101,25 @@ export function Header() {
               </div>
             )}
           </div>
+
+          {/* Team Login/Logout */}
+          {teamAuth.isAuthenticated ? (
+            <button
+              onClick={teamAuth.logout}
+              className="ml-3 md:ml-6 flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+              title={t("Team Logout")}
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">{t("Team Logout")}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowTeamModal(true)}
+              className="ml-3 md:ml-6 text-xs font-medium text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            >
+              {t("Team Login")}
+            </button>
+          )}
 
           <div className="relative ml-3 md:ml-6" ref={langDropdownRef}>
             <button
