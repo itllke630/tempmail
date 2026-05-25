@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-workers';
 import { cors } from 'hono/cors';
 // 导入数据库相关的模块
-import { deleteEmails, findEmailById, getEmailsByMessageTo, insertEmail, deleteExpiredEmailsByDomain, insertApiKey, getSiteStats, incrementEmailsReceived, incrementApiKeysCreated, incrementAddressesCreated, incrementDailyAddressesCreated, incrementDailyEmailsReceived, incrementDailyApiKeysCreated, getMailboxMetaByAddress } from './database/dao';
+import { deleteEmails, findEmailById, getEmailsByMessageTo, insertEmail, deleteExpiredEmailsByDomain, insertApiKey, getSiteStats, incrementEmailsReceived, incrementApiKeysCreated, incrementAddressesCreated, incrementDailyAddressesCreated, incrementDailyEmailsReceived, incrementDailyApiKeysCreated, getMailboxMetaByAddress, getTelegramSubscriptionsByAddress } from './database/dao';
 import { getD1DB } from './database/db';
 import { InsertEmail, insertEmailSchema } from './database/schema';
 import { nanoid } from 'nanoid/non-secure';
@@ -12,6 +12,8 @@ import { decrypt } from './utils';
 // 导入 v1 API
 import v1Api from './api/v1';
 import { isOpenApiEnabled, requireOpenApi } from './openapi';
+import { handleTelegramWebhook } from './telegram/webhook';
+import { sendMessage, buildEmailNotification, setWebhook } from './telegram/bot';
 
 
 // 定义 Cloudflare 绑定和环境变量的类型
@@ -30,6 +32,8 @@ export interface Env {
   SHOW_AFF?: string;
   ENABLE_OPENAPI?: string;
   TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_BOT_USERNAME?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string;
   TEAM_DOMAINS?: string;
   AD_TOP_HTML?: string;
   AD_LEFT_HTML?: string;
@@ -371,6 +375,7 @@ app.get('/config', (c) => {
     apiRateLimitPerMinute: parseRateLimitPerMinute(c.env),
     openApiEnabled,
     showAff: c.env.SHOW_AFF === 'true',
+    telegramBotUsername: c.env.TELEGRAM_BOT_USERNAME || null,
   };
   return new Response(JSON.stringify(responseData), {
     headers: {
@@ -514,6 +519,34 @@ app.post('/api/admin/generate-key', async (c) => {
   }
 });
 
+// Telegram webhook 端点
+api.post('/telegram/webhook', async (c) => {
+  return handleTelegramWebhook(c.req.raw, c.env, c.executionCtx);
+});
+
+// 管理员设置 Telegram Webhook
+app.post('/api/admin/telegram/setup-webhook', async (c) => {
+  if (!c.env.PASSWORD || !c.env.TELEGRAM_BOT_TOKEN) {
+    return c.json({ error: { code: 'DISABLED', message: 'Telegram bot is not configured' } }, 403);
+  }
+
+  let body: { password?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'Invalid request body' } }, 400);
+  }
+
+  if (!body.password || body.password !== c.env.PASSWORD) {
+    return c.json({ error: { code: 'UNAUTHORIZED', message: 'Invalid admin password' } }, 401);
+  }
+
+  const webhookUrl = `${new URL(c.req.url).origin}/api/telegram/webhook`;
+  const res = await setWebhook(c.env.TELEGRAM_BOT_TOKEN, webhookUrl, c.env.TELEGRAM_WEBHOOK_SECRET || '');
+  const data = await res.json();
+  return c.json({ success: res.ok, ...data });
+});
+
 // 挂载 v1 API 路由
 app.route('/v1', v1Api);
 // 保留旧路径以兼容已有调用
@@ -570,6 +603,19 @@ export default {
       // 增加邮件接收计数
       await incrementEmailsReceived(db);
       await incrementDailyEmailsReceived(db);
+
+      // 发送 Telegram 通知
+      if (env.TELEGRAM_BOT_TOKEN) {
+        const subs = await getTelegramSubscriptionsByAddress(db, message.to);
+        if (subs.length > 0) {
+          const fromName = mail.from?.name || '';
+          const fromAddress = mail.from?.address || message.from;
+          const text = buildEmailNotification(message.to, fromName, fromAddress, mail.subject);
+          for (const sub of subs) {
+            ctx.waitUntil(sendMessage(env.TELEGRAM_BOT_TOKEN, sub.chatId, text));
+          }
+        }
+      }
     } catch (e: any) {
       // **关键修复**：向 Cloudflare 发出拒绝信号
       // 当发生任何错误时，调用 message.setReject() 告知 Cloudflare 处理失败。

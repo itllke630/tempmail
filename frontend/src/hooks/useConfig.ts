@@ -11,6 +11,7 @@ export interface AppConfig {
   apiRateLimitPerMinute: number;
   openApiEnabled: boolean;
   showAff: boolean;
+  telegramBotUsername: string | null;
 }
 
 // 创建 React Context

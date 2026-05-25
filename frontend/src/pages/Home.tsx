@@ -192,7 +192,14 @@ export function Home() {
     const next = !telegramEnabled;
     setTelegramEnabled(next);
     if (next) {
-      toast.success(t("Telegram notifications coming soon"), { icon: "🚀" });
+      const botUsername = config.telegramBotUsername;
+      if (botUsername) {
+        const botUrl = `https://t.me/${botUsername}`;
+        window.open(botUrl, "_blank", "noopener");
+        toast.success(t("Open Telegram bot to subscribe"), { icon: "🤖" });
+      } else {
+        toast.success(t("Telegram notifications enabled"), { icon: "🤖" });
+      }
     }
   };
 

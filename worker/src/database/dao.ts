@@ -2,7 +2,7 @@ import { count, desc, asc, eq, and, inArray, lt, sql } from "drizzle-orm";
 // fix: 将数据库类型从 LibSQLDatabase 更改为 DrizzleD1Database，以匹配 Cloudflare D1
 import { DrizzleD1Database } from "drizzle-orm/d1";
 // refactor: 更新 schema 的导入路径
-import { emails, InsertEmail, apiKeys, InsertApiKey, mailboxes, InsertMailbox, siteStats, SiteStats, dailyStats, DailyStats, apiRateLimits } from "./schema";
+import { emails, InsertEmail, apiKeys, InsertApiKey, mailboxes, InsertMailbox, siteStats, SiteStats, dailyStats, DailyStats, apiRateLimits, telegramSubscriptions, TelegramSubscription } from "./schema";
 
 export async function insertEmail(db: DrizzleD1Database, email: InsertEmail) {
   try {
@@ -642,5 +642,112 @@ export async function incrementAndGetApiRateWindowCount(
   } catch (e) {
     console.error("incrementAndGetApiRateWindowCount error:", e);
     return 1;
+  }
+}
+
+// ==================== Telegram Subscriptions ====================
+
+export async function insertTelegramSubscription(
+  db: DrizzleD1Database,
+  chatId: number,
+  address: string,
+) {
+  try {
+    await db
+      .insert(telegramSubscriptions)
+      .values({ chatId, address, createdAt: new Date() })
+      .onConflictDoNothing()
+      .execute();
+    return true;
+  } catch (e) {
+    console.error("insertTelegramSubscription error:", e);
+    return false;
+  }
+}
+
+export async function deleteTelegramSubscription(
+  db: DrizzleD1Database,
+  chatId: number,
+  address: string,
+) {
+  try {
+    const result = await db
+      .delete(telegramSubscriptions)
+      .where(
+        and(
+          eq(telegramSubscriptions.chatId, chatId),
+          eq(telegramSubscriptions.address, address),
+        ),
+      )
+      .execute();
+    return result.rowsAffected > 0;
+  } catch (e) {
+    console.error("deleteTelegramSubscription error:", e);
+    return false;
+  }
+}
+
+export async function deleteAllTelegramSubscriptionsByChatId(
+  db: DrizzleD1Database,
+  chatId: number,
+) {
+  try {
+    const result = await db
+      .delete(telegramSubscriptions)
+      .where(eq(telegramSubscriptions.chatId, chatId))
+      .execute();
+    return result.rowsAffected;
+  } catch (e) {
+    console.error("deleteAllTelegramSubscriptionsByChatId error:", e);
+    return 0;
+  }
+}
+
+export async function getTelegramSubscriptionsByAddress(
+  db: DrizzleD1Database,
+  address: string,
+): Promise<TelegramSubscription[]> {
+  try {
+    return await db
+      .select()
+      .from(telegramSubscriptions)
+      .where(eq(telegramSubscriptions.address, address))
+      .execute();
+  } catch (e) {
+    console.error("getTelegramSubscriptionsByAddress error:", e);
+    return [];
+  }
+}
+
+export async function getTelegramSubscriptionsByChatId(
+  db: DrizzleD1Database,
+  chatId: number,
+): Promise<TelegramSubscription[]> {
+  try {
+    return await db
+      .select()
+      .from(telegramSubscriptions)
+      .where(eq(telegramSubscriptions.chatId, chatId))
+      .execute();
+  } catch (e) {
+    console.error("getTelegramSubscriptionsByChatId error:", e);
+    return [];
+  }
+}
+
+export async function getTelegramSubscriptionCountByChatId(
+  db: DrizzleD1Database,
+  chatId: number,
+): Promise<number> {
+  try {
+    const result = await db
+      .select({ count: count() })
+      .from(telegramSubscriptions)
+      .where(eq(telegramSubscriptions.chatId, chatId))
+      .execute();
+    return result[0]?.count ?? 0;
+  } catch (e) {
+    console.error("getTelegramSubscriptionCountByChatId error:", e);
+    return 0;
   }
 }

@@ -140,3 +140,21 @@ export const apiRateLimits = sqliteTable(
 );
 
 export type ApiRateLimitWindow = typeof apiRateLimits.$inferSelect;
+
+// ==================== Telegram Subscriptions 表 ====================
+export const telegramSubscriptions = sqliteTable(
+  "telegram_subscriptions",
+  {
+    chatId: integer("chat_id").notNull(),
+    address: text("address").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({
+      columns: [table.chatId, table.address],
+    }),
+    addressIdx: index("idx_telegram_subscriptions_address").on(table.address),
+  }),
+);
+
+export type TelegramSubscription = typeof telegramSubscriptions.$inferSelect;

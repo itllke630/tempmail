@@ -78,6 +78,7 @@ jobs:
               'COOKIES_SECRET', 'TURNSTILE_KEY', 'TURNSTILE_SECRET',
               'PASSWORD', 'API_RATE_LIMIT_PER_MINUTE', 'SHOW_AFF',
               'ENABLE_OPENAPI', 'DOMAIN_TTL_CONFIG', 'TELEGRAM_BOT_TOKEN',
+              'TELEGRAM_BOT_USERNAME', 'TELEGRAM_WEBHOOK_SECRET',
               'TEAM_DOMAINS', 'AD_TOP_HTML', 'AD_LEFT_HTML', 'AD_RIGHT_HTML',
           ]
           result = []
@@ -107,6 +108,8 @@ jobs:
           ENABLE_OPENAPI: ${{ secrets.ENABLE_OPENAPI }}
           DOMAIN_TTL_CONFIG: ${{ secrets.DOMAIN_TTL_CONFIG }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_USERNAME: ${{ secrets.TELEGRAM_BOT_USERNAME }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           TEAM_DOMAINS: ${{ secrets.TEAM_DOMAINS }}
           AD_TOP_HTML: ${{ secrets.AD_TOP_HTML }}
           AD_LEFT_HTML: ${{ secrets.AD_LEFT_HTML }}
