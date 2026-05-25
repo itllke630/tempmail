@@ -23,12 +23,6 @@ export function Home() {
   const queryClient = useQueryClient();
   const teamAuth = useTeamAuth();
 
-  const [localPart, setLocalPart] = useState(() => {
-    const addr = Cookies.get("userMailbox");
-    if (addr) return addr.split("@")[0];
-    return generateRandomLocalPart();
-  });
-
   const getInitialDomain = () => {
     if (teamAuth.isAuthenticated) {
       const allTeamDomains = [...new Set([...config.teamDomains, ...teamAuth.teamDomains])];
@@ -37,8 +31,20 @@ export function Home() {
     return config.emailDomain[0];
   };
 
-  const [selectedDomain, setSelectedDomain] = useState(getInitialDomain);
-  const [address, setAddress] = useState<string | undefined>(() => Cookies.get("userMailbox") || undefined);
+  const cookieAddress = Cookies.get("userMailbox");
+  const parsedDomain = cookieAddress ? cookieAddress.split("@")[1] : undefined;
+
+  const [localPart, setLocalPart] = useState(() => {
+    if (cookieAddress) return cookieAddress.split("@")[0];
+    return generateRandomLocalPart();
+  });
+
+  const [selectedDomain, setSelectedDomain] = useState(() => {
+    if (cookieAddress) return parsedDomain!;
+    return getInitialDomain();
+  });
+
+  const [address, setAddress] = useState<string | undefined>(() => cookieAddress || undefined);
   const [expiryTimestamp, setExpiryTimestamp] = useState<number | undefined>(() => {
     const expiry = Cookies.get("emailExpiry");
     return expiry ? parseInt(expiry, 10) : undefined;
@@ -183,21 +189,22 @@ export function Home() {
     }
     const newLocal = generateRandomLocalPart(randomLength);
     setLocalPart(newLocal);
-    updateAddress(newLocal, selectedDomain);
-    if (config.turnstileEnabled && !turnstileToken) {
-      toast.error(t("No captcha response"));
-      return;
-    }
-    try {
-      if (config.turnstileEnabled) {
-        await verifyTurnstile(turnstileToken);
+    if (config.turnstileEnabled) {
+      if (!turnstileToken) {
+        toast.error(t("No captcha response"));
+        return;
       }
-      setTurnstileToken("");
-      setTurnstileKey(k => k + 1);
-      toast.success(t("New address generated"));
-    } catch {
-      toast.error(t("Failed to verify captcha"));
+      try {
+        await verifyTurnstile(turnstileToken);
+      } catch {
+        toast.error(t("Failed to verify captcha"));
+        return;
+      }
     }
+    updateAddress(newLocal, selectedDomain);
+    setTurnstileToken("");
+    setTurnstileKey(k => k + 1);
+    toast.success(t("New address generated"));
   };
 
   const handleRefresh = () => { refetch(); };
