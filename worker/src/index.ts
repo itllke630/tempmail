@@ -631,8 +631,9 @@ export default {
   // 邮件处理逻辑
   async email(message: ForwardableEmail, env: Env, ctx: ExecutionContext) {
     const db = getD1DB(env.DB);
-    let mail: any = null;
 
+    // Step 1: Parse and store email (critical path)
+    let mail: any = null;
     try {
       const raw = await new Response(message.raw).text();
       mail = await new PostalMime().parse(raw);
@@ -664,21 +665,24 @@ export default {
 
       const email = insertEmailSchema.parse(newEmail);
       await insertEmail(db, email);
-      await incrementEmailsReceived(db);
-      await incrementDailyEmailsReceived(db);
     } catch (e: any) {
       console.error('处理邮件失败:', e);
       message.setReject(`邮件处理失败: ${e.message}`);
       return;
     }
 
-    // Telegram 通知
+    // Step 2: Update stats (best effort, don't block)
+    try { await incrementEmailsReceived(db); } catch { /* ignore */ }
+    try { await incrementDailyEmailsReceived(db); } catch { /* ignore */ }
+
+    // Step 3: Telegram notification (best effort, logged to D1)
     if (!env.TELEGRAM_BOT_TOKEN) {
       await insertNotificationLog(db, nanoid(), message.to, "no_token", null);
     } else if (!mail) {
       await insertNotificationLog(db, nanoid(), message.to, "no_mail", null);
     } else {
       try {
+        await insertNotificationLog(db, nanoid(), message.to, "notify_start", null);
         const subs = await getTelegramSubscriptionsByAddress(db, message.to);
         await insertNotificationLog(db, nanoid(), message.to, "subs_lookup", `found=${subs.length}`);
         if (subs.length > 0) {
@@ -691,7 +695,7 @@ export default {
           }
         }
       } catch (e: any) {
-        await insertNotificationLog(db, nanoid(), message.to, "error", e.message || String(e));
+        await insertNotificationLog(db, nanoid(), message.to, "error", e.message || String(e)).catch(() => {});
       }
     }
   },
