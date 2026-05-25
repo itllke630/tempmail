@@ -126,7 +126,7 @@ export function EmailListPanel({
                     otpCodes={getOtpsForEmail(email)}
                   />
                   {/* Native Ad at position 3 */}
-                  {idx === 2 && (infeedAdHtml ? <AdFrame html={infeedAdHtml} width={468} height={60} className="my-2" /> : null)}
+                  {idx === 2 && (infeedAdHtml ? <AdFrame html={infeedAdHtml} width={728} height={90} className="my-2" /> : null)}
                 </div>
               ))}
             </div>
