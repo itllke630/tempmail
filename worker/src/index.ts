@@ -551,6 +551,48 @@ app.post('/api/admin/telegram/setup-webhook', async (c) => {
   return c.json({ success: res.ok, ...data });
 });
 
+// 诊断：手动测试 Telegram 通知
+app.post('/api/admin/telegram/test', async (c) => {
+  if (!c.env.PASSWORD || !c.env.TELEGRAM_BOT_TOKEN) {
+    return c.json({ error: 'Not configured' }, 403);
+  }
+
+  let body: { password?: string; address?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid body' }, 400);
+  }
+
+  if (!body.password || body.password !== c.env.PASSWORD) {
+    return c.json({ error: 'Invalid admin password' }, 401);
+  }
+
+  const address = body.address;
+  if (!address) {
+    return c.json({ error: 'address is required' }, 400);
+  }
+
+  const db = getD1DB(c.env.DB);
+  const subs = await getTelegramSubscriptionsByAddress(db, address);
+
+  if (subs.length === 0) {
+    return c.json({ found: false, message: `No subscriptions for ${address}` });
+  }
+
+  const results: { chatId: number; status: number; body: unknown }[] = [];
+  for (const sub of subs) {
+    const res = await sendMessage(
+      c.env.TELEGRAM_BOT_TOKEN,
+      sub.chatId,
+      `📧 <b>Test notification</b>\nAddress: ${address}\nThis is a manual test.`,
+    );
+    results.push({ chatId: sub.chatId, status: res.status, body: await res.json() });
+  }
+
+  return c.json({ found: true, subs: subs.length, results });
+});
+
 // 挂载 v1 API 路由
 app.route('/v1', v1Api);
 // 保留旧路径以兼容已有调用
