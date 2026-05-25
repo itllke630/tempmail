@@ -22,7 +22,7 @@ export async function handleTelegramWebhook(
   ctx: ExecutionContext,
 ): Promise<Response> {
   const secretToken = request.headers.get("X-Telegram-Bot-Api-Secret-Token");
-  if (!env.TELEGRAM_WEBHOOK_SECRET || secretToken !== env.TELEGRAM_WEBHOOK_SECRET) {
+  if (env.TELEGRAM_WEBHOOK_SECRET && secretToken !== env.TELEGRAM_WEBHOOK_SECRET) {
     return new Response("Forbidden", { status: 403 });
   }
 

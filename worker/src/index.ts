@@ -566,21 +566,18 @@ app.get('/assets/*', serveStatic({ root: './' }))
 export default {
   // 邮件处理逻辑
   async email(message: ForwardableEmail, env: Env, ctx: ExecutionContext) {
+    const db = getD1DB(env.DB);
+
     try {
-      const db = getD1DB(env.DB);
-      // 将原始邮件流转换为文本
       const raw = await new Response(message.raw).text();
-      // 使用 postal-mime 解析邮件
       const mail = await new PostalMime().parse(raw);
       const now = new Date();
 
-      // **关键修复**：显式地从解析结果中映射字段，而不是使用对象展开(...)
-      // 这样可以避免属性覆盖和类型不匹配的问题
       const newEmail: InsertEmail = {
         id: nanoid(),
         messageFrom: message.from,
         messageTo: message.to,
-        headers: mail.headers || [], // 确保 headers 存在
+        headers: mail.headers || [],
         from: mail.from,
         sender: mail.sender,
         replyTo: mail.replyTo,
@@ -590,7 +587,7 @@ export default {
         cc: mail.cc,
         bcc: mail.bcc,
         subject: mail.subject,
-        messageId: mail.messageId, // messageId 在数据库中是必需的
+        messageId: mail.messageId,
         inReplyTo: mail.inReplyTo,
         references: mail.references,
         date: mail.date,
@@ -600,30 +597,30 @@ export default {
         updatedAt: now,
       };
 
-      // 验证待插入的数据是否符合 schema
       const email = insertEmailSchema.parse(newEmail);
-      // 插入数据库
       await insertEmail(db, email);
-      // 增加邮件接收计数
       await incrementEmailsReceived(db);
       await incrementDailyEmailsReceived(db);
 
-      // 发送 Telegram 通知
+      // Telegram 通知
       if (env.TELEGRAM_BOT_TOKEN) {
-        const subs = await getTelegramSubscriptionsByAddress(db, message.to);
-        if (subs.length > 0) {
-          const fromName = mail.from?.name || '';
-          const fromAddress = mail.from?.address || message.from;
-          const text = buildEmailNotification(message.to, fromName, fromAddress, mail.subject);
-          for (const sub of subs) {
-            ctx.waitUntil(sendMessage(env.TELEGRAM_BOT_TOKEN, sub.chatId, text));
+        ctx.waitUntil((async () => {
+          try {
+            const subs = await getTelegramSubscriptionsByAddress(db, message.to);
+            if (subs.length > 0) {
+              const fromName = mail.from?.name || '';
+              const fromAddress = mail.from?.address || message.from;
+              const text = buildEmailNotification(message.to, fromName, fromAddress, mail.subject);
+              for (const sub of subs) {
+                ctx.waitUntil(sendMessage(env.TELEGRAM_BOT_TOKEN, sub.chatId, text));
+              }
+            }
+          } catch (e: any) {
+            console.error('发送 Telegram 通知失败:', e);
           }
-        }
+        })());
       }
     } catch (e: any) {
-      // **关键修复**：向 Cloudflare 发出拒绝信号
-      // 当发生任何错误时，调用 message.setReject() 告知 Cloudflare 处理失败。
-      // 这会让 Cloudflare 尝试重新投递邮件，而不是直接删除。
       console.error('处理邮件失败:', e);
       message.setReject(`邮件处理失败: ${e.message}`);
     }
