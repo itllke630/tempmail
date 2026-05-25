@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-workers';
 import { cors } from 'hono/cors';
 // 导入数据库相关的模块
-import { deleteEmails, findEmailById, getEmailsByMessageTo, insertEmail, deleteExpiredEmailsByDomain, insertApiKey, getSiteStats, incrementEmailsReceived, incrementApiKeysCreated, incrementAddressesCreated, incrementDailyAddressesCreated, incrementDailyEmailsReceived, incrementDailyApiKeysCreated, getMailboxMetaByAddress, getTelegramSubscriptionsByAddress, insertNotificationLog, getRecentNotificationLogs } from './database/dao';
+import { deleteEmails, findEmailById, getEmailsByMessageTo, insertEmail, deleteExpiredEmailsByDomain, insertApiKey, getSiteStats, incrementEmailsReceived, incrementApiKeysCreated, incrementAddressesCreated, incrementDailyAddressesCreated, incrementDailyEmailsReceived, incrementDailyApiKeysCreated, getMailboxMetaByAddress, getTelegramSubscriptionsByAddress } from './database/dao';
 import { getD1DB } from './database/db';
 import { InsertEmail, insertEmailSchema } from './database/schema';
 import { nanoid } from 'nanoid/non-secure';
@@ -377,7 +377,6 @@ app.get('/config', (c) => {
     openApiEnabled,
     showAff: c.env.SHOW_AFF === 'true',
     telegramBotUsername: c.env.TELEGRAM_BOT_USERNAME || null,
-    version: "2026-05-25-v3",
   };
   return new Response(JSON.stringify(responseData), {
     headers: {
@@ -552,78 +551,6 @@ app.post('/api/admin/telegram/setup-webhook', async (c) => {
   return c.json({ success: res.ok, ...data });
 });
 
-// 诊断：手动测试 Telegram 通知
-app.post('/api/admin/telegram/test', async (c) => {
-  if (!c.env.PASSWORD || !c.env.TELEGRAM_BOT_TOKEN) {
-    return c.json({ error: 'Not configured' }, 403);
-  }
-
-  let body: { password?: string; address?: string };
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: 'Invalid body' }, 400);
-  }
-
-  if (!body.password || body.password !== c.env.PASSWORD) {
-    return c.json({ error: 'Invalid admin password' }, 401);
-  }
-
-  const address = body.address;
-  if (!address) {
-    return c.json({ error: 'address is required' }, 400);
-  }
-
-  const db = getD1DB(c.env.DB);
-
-  // Test: verify notification_logs table works
-  try {
-    await insertNotificationLog(db, `test_${Date.now()}`, address, "diagnostic_test", null);
-  } catch (e: any) {
-    return c.json({ error: `notification_logs insert failed: ${e.message}` }, 500);
-  }
-
-  const subs = await getTelegramSubscriptionsByAddress(db, address);
-
-  if (subs.length === 0) {
-    return c.json({ found: false, message: `No subscriptions for ${address}` });
-  }
-
-  const results: { chatId: number; status: number; body: unknown }[] = [];
-  for (const sub of subs) {
-    const res = await sendMessage(
-      c.env.TELEGRAM_BOT_TOKEN,
-      sub.chatId,
-      `📧 <b>Test notification</b>\nAddress: ${address}\nThis is a manual test.`,
-    );
-    results.push({ chatId: sub.chatId, status: res.status, body: await res.json() });
-  }
-
-  return c.json({ found: true, subs: subs.length, results });
-});
-
-// 查看 Telegram 通知日志
-app.post('/api/admin/telegram/logs', async (c) => {
-  if (!c.env.PASSWORD) {
-    return c.json({ error: 'Not configured' }, 403);
-  }
-
-  let body: { password?: string };
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: 'Invalid body' }, 400);
-  }
-
-  if (!body.password || body.password !== c.env.PASSWORD) {
-    return c.json({ error: 'Invalid admin password' }, 401);
-  }
-
-  const db = getD1DB(c.env.DB);
-  const logs = await getRecentNotificationLogs(db, 30);
-  return c.json(logs);
-});
-
 // 挂载 v1 API 路由
 app.route('/v1', v1Api);
 // 保留旧路径以兼容已有调用
@@ -675,29 +602,18 @@ export default {
       const email = insertEmailSchema.parse(newEmail);
       await insertEmail(db, email);
 
-      // Write log entry immediately after successful insert to confirm this code ran
-      await insertNotificationLog(db, nanoid(), message.to, "email_stored", null);
-
-      // Send Telegram notification
       if (env.TELEGRAM_BOT_TOKEN && mail) {
         try {
           const subs = await getTelegramSubscriptionsByAddress(db, message.to);
-          await insertNotificationLog(db, nanoid(), message.to, "subs_lookup", `found=${subs.length}`);
           if (subs.length > 0) {
             const fromName = mail.from?.name || '';
             const fromAddress = mail.from?.address || message.from;
             const text = buildEmailNotification(message.to, fromName, fromAddress, mail.subject);
             for (const sub of subs) {
-              const res = await sendMessage(env.TELEGRAM_BOT_TOKEN, sub.chatId, text);
-              await insertNotificationLog(db, nanoid(), message.to, "sent", `chatId=${sub.chatId} status=${res.status}`);
+              ctx.waitUntil(sendMessage(env.TELEGRAM_BOT_TOKEN, sub.chatId, text));
             }
           }
-        } catch (e: any) {
-          await insertNotificationLog(db, nanoid(), message.to, "error", e.message || String(e)).catch(() => {});
-        }
-      } else {
-        const reason = !env.TELEGRAM_BOT_TOKEN ? "no_token" : "no_mail";
-        await insertNotificationLog(db, nanoid(), message.to, reason, null);
+        } catch { /* ignore notification errors */ }
       }
     } catch (e: any) {
       console.error('处理邮件失败:', e);

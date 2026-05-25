@@ -2,7 +2,7 @@ import { count, desc, asc, eq, and, inArray, lt, sql } from "drizzle-orm";
 // fix: 将数据库类型从 LibSQLDatabase 更改为 DrizzleD1Database，以匹配 Cloudflare D1
 import { DrizzleD1Database } from "drizzle-orm/d1";
 // refactor: 更新 schema 的导入路径
-import { emails, InsertEmail, apiKeys, InsertApiKey, mailboxes, InsertMailbox, siteStats, SiteStats, dailyStats, DailyStats, apiRateLimits, telegramSubscriptions, TelegramSubscription, notificationLogs, NotificationLog } from "./schema";
+import { emails, InsertEmail, apiKeys, InsertApiKey, mailboxes, InsertMailbox, siteStats, SiteStats, dailyStats, DailyStats, apiRateLimits, telegramSubscriptions, TelegramSubscription } from "./schema";
 
 export async function insertEmail(db: DrizzleD1Database, email: InsertEmail) {
   try {
@@ -749,42 +749,5 @@ export async function getTelegramSubscriptionCountByChatId(
   } catch (e) {
     console.error("getTelegramSubscriptionCountByChatId error:", e);
     return 0;
-  }
-}
-
-export async function insertNotificationLog(
-  db: DrizzleD1Database,
-  id: string,
-  recipient: string,
-  step: string,
-  detail: string | null,
-): Promise<void> {
-  try {
-    await db.insert(notificationLogs).values({
-      id,
-      recipient,
-      step,
-      detail,
-      createdAt: new Date(),
-    }).execute();
-  } catch (e) {
-    console.error("insertNotificationLog error:", e);
-  }
-}
-
-export async function getRecentNotificationLogs(
-  db: DrizzleD1Database,
-  limit: number = 20,
-): Promise<NotificationLog[]> {
-  try {
-    return await db
-      .select()
-      .from(notificationLogs)
-      .orderBy(desc(notificationLogs.createdAt))
-      .limit(limit)
-      .execute();
-  } catch (e) {
-    console.error("getRecentNotificationLogs error:", e);
-    return [];
   }
 }
