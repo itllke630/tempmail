@@ -607,12 +607,14 @@ export default {
         ctx.waitUntil((async () => {
           try {
             const subs = await getTelegramSubscriptionsByAddress(db, message.to);
+            console.log(`[Telegram] email to=${message.to} subs=${subs.length}`);
             if (subs.length > 0) {
               const fromName = mail.from?.name || '';
               const fromAddress = mail.from?.address || message.from;
               const text = buildEmailNotification(message.to, fromName, fromAddress, mail.subject);
               for (const sub of subs) {
-                ctx.waitUntil(sendMessage(env.TELEGRAM_BOT_TOKEN, sub.chatId, text));
+                const res = await sendMessage(env.TELEGRAM_BOT_TOKEN!, sub.chatId, text);
+                console.log(`[Telegram] sendMessage chatId=${sub.chatId} status=${res.status}`);
               }
             }
           } catch (e: any) {
