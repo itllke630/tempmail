@@ -574,6 +574,14 @@ app.post('/api/admin/telegram/test', async (c) => {
   }
 
   const db = getD1DB(c.env.DB);
+
+  // Test: verify notification_logs table works
+  try {
+    await insertNotificationLog(db, `test_${Date.now()}`, address, "diagnostic_test", null);
+  } catch (e: any) {
+    return c.json({ error: `notification_logs insert failed: ${e.message}` }, 500);
+  }
+
   const subs = await getTelegramSubscriptionsByAddress(db, address);
 
   if (subs.length === 0) {
