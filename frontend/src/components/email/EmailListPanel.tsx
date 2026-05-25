@@ -4,7 +4,7 @@ import { SkeletonLoader } from "./SkeletonLoader";
 import { EmptyState } from "./EmptyState";
 import { EmailListItem } from "./EmailListItem";
 import { EmailDetailView } from "./EmailDetailView";
-import { AdSlot } from "../ads/AdSlot";
+import { AdFrame } from "../ads/AdFrame";
 import type { Email } from "../../database_types";
 import type { OtpMatch } from "../../types";
 
@@ -23,13 +23,14 @@ interface EmailListPanelProps {
   onRefresh: () => void;
   getOtpsForEmail: (email: Email) => OtpMatch[];
   lastViewedAt: number | null;
+  infeedAdHtml?: string;
 }
 
 export function EmailListPanel({
   emails, isLoading, isFetching, isDeleting,
   selectedIds, setSelectedIds, selectedEmail, onSelectEmail,
   onCloseDetail, onExpand, onDelete, onRefresh,
-  getOtpsForEmail, lastViewedAt,
+  getOtpsForEmail, lastViewedAt, infeedAdHtml,
 }: EmailListPanelProps) {
   const { t } = useTranslation();
 
@@ -125,7 +126,7 @@ export function EmailListPanel({
                     otpCodes={getOtpsForEmail(email)}
                   />
                   {/* Native Ad at position 3 */}
-                  {idx === 2 && <AdSlot variant="infeed" className="my-2" />}
+                  {idx === 2 && (infeedAdHtml ? <AdFrame html={infeedAdHtml} width={468} height={60} className="my-2" /> : null)}
                 </div>
               ))}
             </div>

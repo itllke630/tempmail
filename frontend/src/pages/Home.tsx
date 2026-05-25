@@ -53,6 +53,7 @@ export function Home() {
   const [randomLength, setRandomLength] = useState(10);
   const [leftAd, setLeftAd] = useState("");
   const [rightAd, setRightAd] = useState("");
+  const [infeedAd, setInfeedAd] = useState("");
 
   const ttlHours = config.domainTtlConfig?.[selectedDomain] ?? 24;
 
@@ -133,6 +134,7 @@ export function Home() {
   useEffect(() => {
     fetch("/api/ad-left").then(r => r.json()).then(d => setLeftAd(d.html || "")).catch(() => {});
     fetch("/api/ad-right").then(r => r.json()).then(d => setRightAd(d.html || "")).catch(() => {});
+    fetch("/api/ad-infeed").then(r => r.json()).then(d => setInfeedAd(d.html || "")).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -272,6 +274,7 @@ export function Home() {
               onRefresh={handleRefresh}
               getOtpsForEmail={extractOtpsFromEmail}
               lastViewedAt={null}
+              infeedAdHtml={infeedAd}
             />
           </main>
 

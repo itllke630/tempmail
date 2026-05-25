@@ -80,6 +80,7 @@ jobs:
               'ENABLE_OPENAPI', 'DOMAIN_TTL_CONFIG', 'TELEGRAM_BOT_TOKEN',
               'TELEGRAM_BOT_USERNAME', 'TELEGRAM_WEBHOOK_SECRET',
               'TEAM_DOMAINS', 'AD_TOP_HTML', 'AD_LEFT_HTML', 'AD_RIGHT_HTML',
+              'AD_INFEED_HTML',
           ]
           result = []
           for line in lines:
@@ -114,6 +115,7 @@ jobs:
           AD_TOP_HTML: ${{ secrets.AD_TOP_HTML }}
           AD_LEFT_HTML: ${{ secrets.AD_LEFT_HTML }}
           AD_RIGHT_HTML: ${{ secrets.AD_RIGHT_HTML }}
+          AD_INFEED_HTML: ${{ secrets.AD_INFEED_HTML }}
 
       # 新增：在部署前应用 D1 数据库迁移
       # 这一步会明确地告诉 Wrangler 远程执行 D1 数据库的迁移脚本。

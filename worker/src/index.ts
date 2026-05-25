@@ -38,6 +38,7 @@ export interface Env {
   AD_TOP_HTML?: string;
   AD_LEFT_HTML?: string;
   AD_RIGHT_HTML?: string;
+  AD_INFEED_HTML?: string;
 }
 
 // 初始化 Hono 应用
@@ -394,6 +395,9 @@ api.get('/ad-left', async (c) => {
 });
 api.get('/ad-right', async (c) => {
   return c.json({ html: c.env.AD_RIGHT_HTML || '' });
+});
+api.get('/ad-infeed', async (c) => {
+  return c.json({ html: c.env.AD_INFEED_HTML || '' });
 });
 
 // 站点统计数据接口（公开）
