@@ -39,6 +39,8 @@ export interface Env {
   AD_LEFT_HTML?: string;
   AD_RIGHT_HTML?: string;
   AD_INFEED_HTML?: string;
+  AD_728_HTML?: string;
+  AD_468_HTML?: string;
 }
 
 // 初始化 Hono 应用
@@ -400,6 +402,30 @@ api.get('/ad-infeed', async (c) => {
   return c.json({ html: c.env.AD_INFEED_HTML || '' });
 });
 
+const wrapAdPage = (adHtml: string | undefined, name: string): string => {
+  const html = adHtml || '';
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${name}</title>
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0;padding:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:transparent}</style>
+</head>
+<body>${html}</body>
+</html>`;
+};
+
+app.get('/app/ads/728', (c) => {
+  const html = wrapAdPage(c.env.AD_728_HTML, '728');
+  return c.html(html);
+});
+
+app.get('/app/ads/468', (c) => {
+  const html = wrapAdPage(c.env.AD_468_HTML, '468');
+  return c.html(html);
+});
+
 // 站点统计数据接口（公开）
 api.get('/stats', async (c) => {
   const cache = caches.default;
@@ -630,7 +656,7 @@ export default {
     const url = new URL(request.url);
 
     // API 路由
-    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/v1/') || url.pathname === '/config' || url.pathname.startsWith('/auth/')) {
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/v1/') || url.pathname === '/config' || url.pathname.startsWith('/auth/') || url.pathname.startsWith('/app/ads/')) {
       return app.fetch(request, env, ctx);
     }
 
