@@ -252,7 +252,7 @@ export function Home() {
         />
 
         {config.turnstileEnabled && (
-          <div className="flex justify-end">
+          <div className="fixed bottom-4 right-4 z-50">
             <Turnstile
               key={turnstileKey}
               siteKey={config.turnstileKey}
